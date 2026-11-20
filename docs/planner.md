@@ -1,6 +1,6 @@
-# Planner de matrices
+# Campaign matrix planner
 
-El primer bloque ejecutable es una función Python sin dependencias externas:
+The first executable building block is a dependency-free Python function:
 
 ~~~python
 from simops import (
@@ -23,8 +23,8 @@ plan = plan_campaign(
 )
 ~~~
 
-El planner expande la combinación sistema × escenario × configuración × repetición en IDs estables derivados de la identidad y valores efectivos de cada corrida. Así, cambiar un parámetro manteniendo su etiqueta cambia los IDs.
+The planner expands system × scenario × configuration × repetition into stable IDs derived from the run identity and effective values. Changing a parameter while keeping its label changes the IDs.
 
-Los seeds se emparejan por índice de repetición entre escenarios, sistemas y configuraciones. Si no se suministran, el backend controla la aleatoriedad y el manifiesto deberá registrar la semilla efectiva al ejecutar. El planner valida IDs duplicados/vacíos, número de repeticiones, seeds, paralelismo, reintentos y presupuesto de tiempo.
+Seeds are paired by repetition index across scenarios, systems, and configurations. If no seeds are supplied, the backend controls randomness and the manifest should record the effective seed at runtime. The planner validates duplicate/empty IDs, repetition count, seeds, parallelism, retries, and time budget.
 
-Este código solo crea el plan. No valida todavía esquemas de parámetros del backend, ejecuta simuladores, persiste transiciones ni produce el informe. El ejemplo YAML de examples/campaign-sketch.yaml es ilustrativo y no tiene parser.
+This code only creates the plan. It does not validate backend parameter schemas, run simulators, persist transitions, or produce reports. `examples/campaign-sketch.yaml` is illustrative and has no parser.

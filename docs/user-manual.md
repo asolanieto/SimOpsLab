@@ -1,24 +1,14 @@
-# Manual de usuario de SimOps Lab
+# SimOps Lab user manual
 
-Esta guía describe la interfaz local de SimOps Lab. El runner conserva campañas en SQLite, guarda artefactos con SHA-256 y produce informes JSON, Markdown y HTML. Incluye `demo` para comprobar el flujo sin simulador y `nav2-docker`, un adaptador de demostración para Nav2 y TurtleBot3 en Gazebo Sim. El adaptador Nav2 cubre un mapa y una ruta de ejemplo; otros simuladores se conectan mediante plugins de backend.
+This guide covers the local SimOps Lab interface. The runner stores campaigns in SQLite, saves artifacts with SHA-256, and produces JSON, Markdown, and HTML reports. `demo` exercises the workflow without a simulator. `nav2-docker` is a Nav2/TurtleBot3 demonstration adapter for Gazebo Sim on one bundled map and route; other simulators connect through backend plugins.
 
-## Primera búsqueda desde el checkout
+## Requirements and installation
 
-Desde la raíz del repositorio, se puede probar el afinado LHS sin instalar el paquete ni descargar un simulador:
+- Python 3.11 or later.
+- The core and CLI do not require ROS, Gazebo, or optional dependencies.
+- The Nav2 example requires Docker Engine with an accessible daemon, Linux `amd64`/x86_64, access to GHCR and Ubuntu Archive during image build, and several GB of free disk space.
 
-```sh
-PYTHONPATH=src python3 -m simops tune examples/demo-tuning.json
-```
-
-El ejemplo explora tres parámetros en dos escenarios con cuatro semillas y guarda las campañas, `tuning.json` y `tuning.md` bajo `.simops/`. `demo` es sintético: sirve para comprobar el flujo de búsqueda, persistencia e informes, pero no modela Nav2 ni permite sacar conclusiones sobre un robot. Para medir una simulación real, sigue el ejemplo Nav2 más abajo.
-
-## Requisitos e instalación local
-
-- Python 3.11 o posterior.
-- No se requieren ROS, Gazebo ni dependencias externas para el núcleo y el CLI.
-- Para el ejemplo Nav2: Docker Engine con daemon accesible, Linux `amd64`/x86_64, acceso a GHCR y Ubuntu Archive durante la construcción, y varios GB libres para las imágenes.
-
-Desde la raíz del repositorio:
+From the repository root:
 
 ```sh
 python3 --version
@@ -30,69 +20,61 @@ simops --help
 simops backends
 ```
 
-La instalación editable crea el comando `simops` y permite que el entorno virtual descubra los backends instalados. La base de datos y los informes se crean relativos al directorio desde el que se ejecuta el comando, salvo que se indiquen otras rutas. La instalación estándar necesita que `pip` pueda resolver el backend de construcción definido en `pyproject.toml`.
+The editable install creates the `simops` command and lets the virtual environment discover installed backends. The database and reports are created relative to the current directory unless another location is provided.
 
-Construye la imagen de demostración una vez. El Dockerfile parte de Nav2 Lyrical 1.5.3 fijado por digest e instala la versión fijada de la dependencia runtime que la imagen upstream omite:
+To build the Nav2 demonstration image, run this once. The Dockerfile uses Nav2 Lyrical 1.5.3 pinned by digest and installs a pinned runtime dependency omitted from the upstream image:
 
 ```sh
 docker build -f examples/nav2-turtlebot3/Dockerfile \
   -t simops-lab/nav2-turtlebot3:lyrical-1.5.3-gm1.3.46 .
 ```
 
-## Flujo de trabajo
+## Quick start with the synthetic backend
 
-1. Escribe un manifiesto JSON.
-2. Usa `simops backends` para consultar los adaptadores disponibles.
-3. Ejecuta `simops validate manifiesto.json` para comprobar la matriz y la aceptación del backend.
-4. Ejecuta `simops plan manifiesto.json` para inspeccionar las corridas que se generarán.
-5. Ejecuta `simops run manifiesto.json` para guardar la campaña y lanzar las corridas.
-6. Consulta el estado con `simops status ID` y reanuda trabajo incompleto con `simops resume ID`.
-7. Usa `simops report ID` para regenerar los informes desde los datos guardados.
-8. Opcionalmente, define una búsqueda de parámetros y ejecútala con `simops tune ajuste.json`.
+```sh
+simops profile validate examples/robot-profiles/turtlebot3-demo.json
+simops validate examples/demo-campaign.json
+simops plan examples/demo-campaign.json
+simops run examples/demo-campaign.json
+simops status demo-navigation-smoke
+simops report demo-navigation-smoke
+simops tune examples/demo-tuning.json
+```
 
-`plan` expande la matriz, pero no valida el backend ni guarda la campaña. `validate` sí carga el backend y llama a su validación para cada corrida, pero tampoco inicia ni persiste una ejecución.
+The synthetic example explores parameters, persistence, and reports. It does not model Nav2 physics or robot performance. Results from `demo` are not evidence about a robot.
 
-## Manifiesto JSON v0.1.0
+## Workflow
 
-El cargador acepta JSON con `schema_version`, `backend` y `campaign`. Rechaza claves desconocidas. Las configuraciones y parámetros son objetos JSON; no se admite el ejemplo YAML de planificación que acompaña al repositorio.
+1. Write a JSON manifest.
+2. Use `simops backends` to inspect installed adapters.
+3. Run `simops validate MANIFEST.json` to validate the matrix and backend acceptance.
+4. Run `simops plan MANIFEST.json` to inspect the planned runs.
+5. Run `simops run MANIFEST.json` to store the campaign and execute it.
+6. Inspect `simops status CAMPAIGN_ID`; resume incomplete work with `simops resume CAMPAIGN_ID`.
+7. Use `simops report CAMPAIGN_ID` to regenerate reports from stored data.
+8. Optionally define and run parameter search with `simops tune TUNING.json`.
 
-Ejemplo ejecutable con el backend `demo`:
+`plan` expands the matrix but does not validate the backend or persist the campaign. `validate` loads the backend and calls its validation for every run but does not start or persist execution.
+
+## Campaign manifest v0.1.0
+
+The loader accepts JSON with `schema_version`, `backend`, and `campaign`; unknown keys are rejected. Configuration and parameter values are JSON objects. The illustrative YAML planner sketch is not parsed by SimOps.
 
 ```json
 {
   "schema_version": "0.1.0",
   "backend": "demo",
   "campaign": {
-    "campaign_id": "demo-navegacion-01",
-    "title": "Prueba sintética de navegación",
-    "systems": ["controlador-a"],
+    "campaign_id": "demo-navigation-01",
+    "title": "Synthetic navigation check",
+    "systems": ["controller-a"],
     "scenarios": [
-      {
-        "scenario_id": "facil",
-        "parameters": {"difficulty": 0.2, "distance_m": 8.0}
-      },
-      {
-        "scenario_id": "dificil",
-        "parameters": {"difficulty": 0.7, "distance_m": 12.0}
-      }
+      {"scenario_id": "easy", "parameters": {"difficulty": 0.2, "distance_m": 8.0}},
+      {"scenario_id": "hard", "parameters": {"difficulty": 0.7, "distance_m": 12.0}}
     ],
     "configurations": [
-      {
-        "configuration_id": "base",
-        "values": {
-          "max_speed_mps": 0.45,
-          "controller_gain": 1.0,
-          "inflation_radius_m": 0.45
-        }
-      },
-      {
-        "configuration_id": "prudente",
-        "values": {
-          "max_speed_mps": 0.35,
-          "controller_gain": 1.2,
-          "inflation_radius_m": 0.55
-        }
-      }
+      {"configuration_id": "baseline", "values": {"max_speed_mps": 0.45, "controller_gain": 1.0, "inflation_radius_m": 0.45}},
+      {"configuration_id": "cautious", "values": {"max_speed_mps": 0.35, "controller_gain": 1.2, "inflation_radius_m": 0.55}}
     ],
     "repetitions": 3,
     "seeds": [11, 22, 33],
@@ -104,66 +86,69 @@ Ejemplo ejecutable con el backend `demo`:
 }
 ```
 
-La matriz produce el producto `systems × scenarios × configurations × repetitions`: este ejemplo planifica 12 corridas. Los IDs de corrida se derivan de forma determinista de la identidad y los parámetros de cada corrida.
+The matrix is `systems × scenarios × configurations × repetitions`; the example plans 12 runs. Run IDs are derived deterministically from the run identity and parameters.
 
-Campos y reglas:
+Manifest fields:
 
-- `schema_version`: actualmente debe ser exactamente `"0.1.0"`.
-- `backend`: nombre del backend instalado, por ejemplo `demo`.
-- `campaign_id` y `title`: cadenas no vacías. El ID identifica la campaña en la base local.
-- `systems`: lista no vacía de identificadores únicos y no vacíos.
-- `scenarios`: lista no vacía de objetos con `scenario_id` y, opcionalmente, `parameters` (objeto; por defecto `{}`).
-- `configurations`: lista no vacía de objetos con `configuration_id` y, opcionalmente, `values` (objeto; por defecto `{}`).
-- `repetitions`: entero de al menos 1.
-- `seeds`: campo opcional; si aparece, debe contener un entero único por repetición, en el mismo orden. Si se omite, cada corrida tiene `seed: null` y la aleatoriedad queda a cargo del backend.
-- `max_parallel`: entero de al menos 1; por defecto 1. Un backend que no declare `thread_safe` no admite valores superiores a 1.
-- `max_infrastructure_retries`: cantidad de reintentos adicionales por fallo de infraestructura; entero no negativo, por defecto 0.
-- `wall_time_budget_s`: opcional, numérico, finito y mayor que cero. Limita el inicio de corridas nuevas; no termina a la fuerza una llamada al backend que ya está ejecutándose.
-- `metadata`: objeto JSON opcional, por defecto `{}`.
+- `schema_version`: currently exactly `"0.1.0"`.
+- `backend`: installed backend name, such as `demo`.
+- `campaign_id`, `title`: non-empty strings. The ID identifies the campaign in the local database.
+- `systems`: non-empty list of unique, non-empty IDs.
+- `scenarios`: non-empty list of objects with `scenario_id` and optional object `parameters` (defaults to `{}`).
+- `configurations`: non-empty list with `configuration_id` and optional object `values` (defaults to `{}`).
+- `repetitions`: integer of at least 1.
+- `seeds`: optional list of unique integers, one per repetition, in the same order. If omitted, each run has `seed: null` and the backend controls randomness.
+- `max_parallel`: integer of at least 1, default 1. A backend must declare `thread_safe` to allow values above 1.
+- `max_infrastructure_retries`: additional retries for infrastructure failures; non-negative integer, default 0.
+- `wall_time_budget_s`: optional finite number greater than zero. It prevents new runs from starting after the budget expires; it does not forcibly end a running backend call.
+- `metadata`: optional JSON object, default `{}`.
 
-El planificador comprueba que los identificadores no estén vacíos ni duplicados, y que los datos sean JSON finito. El backend puede aplicar validaciones de dominio adicionales.
+The planner checks for empty or duplicate IDs and finite JSON values. A backend can add domain-specific validation.
 
-## Comandos del CLI
+## CLI behavior and persistence
+
+Useful commands:
 
 ```sh
 simops backends
-simops validate campaña.json
-simops plan campaña.json
-simops plan campaña.json --json
-simops run campaña.json
-simops status demo-navegacion-01
-simops resume demo-navegacion-01
-simops report demo-navegacion-01
+simops validate CAMPAIGN.json
+simops plan CAMPAIGN.json --json
+simops run CAMPAIGN.json
+simops status demo-navigation-01
+simops resume demo-navigation-01
+simops report demo-navigation-01
 simops tune examples/demo-tuning.json
 simops validate examples/nav2-turtlebot3/campaign.json
 simops run examples/nav2-turtlebot3/campaign.json
 simops tune examples/nav2-turtlebot3/tuning.json
 ```
 
-`run`, `resume`, `status`, `report` y `tune` aceptan `--store RUTA`; por defecto usan `.simops/campaigns.sqlite3`. `run`, `resume` y `report` aceptan `--report-dir RUTA`; por defecto usan `.simops/reports`. Cada informe se escribe en un subdirectorio derivado del ID de campaña. `run` y `resume` generan el informe al terminar y muestran las rutas. `report` lo vuelve a generar sin ejecutar corridas. `tune` acepta `--result-dir RUTA`, por defecto `.simops/tunings`.
+`run`, `resume`, `status`, `report`, and `tune` accept `--store PATH`; the default is `.simops/campaigns.sqlite3`. `run`, `resume`, and `report` accept `--report-dir PATH`; the default is `.simops/reports`. Reports are written under a campaign-specific directory. `run` and `resume` create reports when they finish; `report` regenerates them without rerunning simulations. `tune` accepts `--result-dir PATH`; the default is `.simops/tunings`.
 
-Al volver a ejecutar el mismo manifiesto con el mismo ID, SimOps conserva los resultados ya terminados y trabaja sobre las corridas incompletas. Si el ID ya existe asociado a otro manifiesto o a otro backend/versión, el registro falla; usa un ID nuevo para una campaña distinta.
+Running the same manifest with the same ID reuses terminal results and works on incomplete runs. Reusing an ID with a different manifest, backend, or backend version is rejected; use a new ID for a different campaign.
 
-`status` imprime JSON con el estado de campaña, backend y versión, huella del manifiesto, estado y número de intentos por corrida, número de fallos de infraestructura, cantidad de eventos y el último evento. El historial completo también se conserva en SQLite, aunque el CLI actual no tiene un comando para listar todos los eventos o los resultados de cada intento.
+`status` returns JSON with campaign/backend identity, manifest fingerprint, per-run state and attempt counts, infrastructure failure count, event count, and latest event. The full journal remains in SQLite; the CLI does not currently list every event or every attempt result.
 
-Si se interrumpe el proceso, `resume` recupera corridas que quedaron marcadas como `running`, las registra como interrumpidas y decide si puede volver a intentarlas. La reanudación usa la especificación guardada; no necesita el manifiesto original. El backend debe seguir instalado y declarar la misma `backend_version` que quedó almacenada. Si la versión cambió, el CLI rechaza la reanudación y pide usar un ID de campaña nuevo.
+On process interruption, `resume` marks runs left in `running` as interrupted and decides whether they can be retried. It uses the stored specification, so the original manifest is not required. The backend must remain installed at the stored `backend_version`; a version change requires a new campaign ID.
 
-El runner mantiene un bloqueo del sistema operativo por base SQLite e ID de campaña mientras coordina `run` o `resume`. Dos procesos locales no pueden recuperar o ejecutar a la vez la misma campaña; el segundo espera hasta 30 segundos por el bloqueo y luego informa que se reintente. La base local no coordina hosts distintos.
+The runner takes an OS lock per SQLite database and campaign ID while coordinating `run` or `resume`. Local processes cannot execute the same campaign simultaneously; a second process waits up to 30 seconds. The database does not coordinate different hosts.
 
-Al pulsar Ctrl+C durante `run` o `resume`, el CLI activa una señal cooperativa. El backend puede consultar `context.cancellation_requested`; las corridas nuevas se difieren. No existe un comando `cancel` ni una terminación forzada de una ejecución en curso.
+Ctrl+C during `run` or `resume` requests cooperative cancellation through `context.cancellation_requested`; new runs are deferred. There is no CLI `cancel` command or forced termination of an active run.
 
-## Ejemplo real: Nav2 y TurtleBot3 en Docker
+## Nav2/TurtleBot3 Docker example
 
-`examples/nav2-turtlebot3/campaign.json` lanza el mapa sandbox incluido en Nav2 con TurtleBot3 Waffle. `examples/nav2-turtlebot3/tuning.json` prueba tres candidatos LHS en dos rutas. Cada candidato ejecuta una navegación headless en su propio contenedor; se ejecutan secuencialmente para aislar DDS y Gazebo. El adaptador combina los parámetros elegidos con el YAML completo por defecto de Nav2 y conserva el log, los overrides y las medidas como artefactos.
+`examples/nav2-turtlebot3/campaign.json` runs the bundled Nav2 sandbox map with TurtleBot3 Waffle. `tuning.json` screens three LHS candidates across two routes. Each candidate runs headlessly in its own container; candidates run sequentially to isolate DDS and Gazebo. The adapter combines the selected values with the default Nav2 YAML and stores logs, overrides, and measurements as artifacts.
 
-Parámetros ajustables en este adaptador:
+Tunable parameters in this adapter:
 
-- `controller.vx_max`: velocidad lineal máxima MPPI, de 0.1 a 0.8 m/s.
-- `controller.wz_max`: velocidad angular máxima MPPI, de 0.2 a 2.5 rad/s.
-- `controller.temperature`: temperatura MPPI, de 0.05 a 2.0.
-- `costmap.inflation_radius_m`: radio de inflación de los costmaps local y global, de 0.25 a 1.0 m.
+- `controller.vx_max`: MPPI maximum linear speed, 0.1–0.8 m/s.
+- `controller.wz_max`: MPPI maximum angular speed, 0.2–2.5 rad/s.
+- `controller.temperature`: MPPI temperature, 0.05–2.0.
+- `costmap.inflation_radius_m`: local and global costmap inflation radius, 0.25–1.0 m.
 
-La ruta usa posición inicial `(-2.0, -0.5)` y meta `(0.0, -0.5)` en el mapa sandbox; se pueden configurar `start_x`, `start_y`, `start_yaw`, `goal_x`, `goal_y`, `goal_yaw` y `timeout_s` (10–600 s). El backend registra el estado de la acción, tiempos de pared y simulado, trayectoria odométrica, rango láser mínimo, picos y tasa de comandos, fracción de saturación, alternancias angulares, aceleración angular RMS, muestras de odometría y latencia hasta el primer comando nulo tras el éxito. El [catálogo](metrics-catalog.md) precisa qué significa cada una. No mide contactos Gazebo, clearance de huella, ground truth ni error de localización; por tanto, no permite afirmar seguridad. El seed del manifiesto no se aplica a este mundo determinista; no debe tratarse como repetición aleatoria.
+The default route starts at `(-2.0, -0.5)` and targets `(0.0, -0.5)` in the sandbox map. Configure `start_x`, `start_y`, `start_yaw`, `goal_x`, `goal_y`, `goal_yaw`, and `timeout_s` (10–600 s). The backend records action state, wall/simulation time, odometry path, minimum laser range, command peaks/rate, saturation fraction, angular sign changes, RMS angular acceleration, odometry sample count, and time to the first zero command after success. See the [metric catalogue](metrics-catalog.md) for definitions.
+
+The adapter does not measure Gazebo contacts, footprint clearance, ground truth, or localization error, so it cannot establish safety. The bundled world is deterministic and the SimOps `seed` field does not configure a Gazebo seed; do not treat repeats as independent randomized trials.
 
 ```sh
 simops validate examples/nav2-turtlebot3/campaign.json
@@ -171,99 +156,109 @@ simops run examples/nav2-turtlebot3/campaign.json
 simops tune examples/nav2-turtlebot3/tuning.json
 ```
 
-Para ejecutar el manifiesto de ejemplo con TPE en vez de LHS, instala Optuna y usa `examples/nav2-turtlebot3/tuning-tpe.json`:
+To use TPE instead of LHS, install Optuna and use `tuning-tpe.json`:
 
 ```sh
 python -m pip install -e ".[optimize]"
 simops tune examples/nav2-turtlebot3/tuning-tpe.json
 ```
 
-El presupuesto LHS cuenta candidatos; el ejemplo tiene cuatro navegaciones. Antes de interpretar un ajuste, inspecciona `tuning.md` y `tuning.json`, compara la tasa de éxito y las métricas con la configuración base y confirma cualquier candidato con más escenarios y condiciones distintas. Un resultado de esta ruta no demuestra seguridad ni generalidad para otros mapas o robots.
+The LHS budget counts candidates; each example candidate expands to four navigation runs. Inspect `tuning.md` and `tuning.json`, compare success and metrics with the baseline, and confirm promising candidates with additional scenarios and conditions. A result from this route does not establish safety or generality across maps or robots.
 
-## Crear e instalar un backend plugin
+## Install a backend plugin
 
-Los backends de terceros se descubren con entry points de Python del grupo `simops.backends`. En el `pyproject.toml` del paquete adaptador se declara, por ejemplo:
+Third-party backends are discovered through Python entry points in the `simops.backends` group. Declare one in the adapter package's `pyproject.toml`:
 
 ```toml
 [project.entry-points."simops.backends"]
-mi_simulador = "mi_paquete.backend:Backend"
+my_simulator = "my_package.backend:Backend"
 ```
 
-Instala ese paquete en el mismo entorno donde se instaló SimOps. `simops backends` debe mostrar `mi_simulador`; el manifiesto debe indicar exactamente ese nombre. Si dos paquetes reclaman el mismo nombre, la carga falla.
+Install the package in the same environment as SimOps. `simops backends` should list `my_simulator`; manifests must use that exact name. Duplicate entry-point names cause loading to fail.
 
-El objeto backend debe proporcionar:
+The backend object provides:
 
-- `backend_id`: igual al nombre del entry point.
-- `backend_version`: cadena de versión que identifique la implementación.
-- `thread_safe`: booleano declarativo; solo se permite concurrencia mayor que uno cuando es verdadero.
-- `validate(run)`: devuelve una secuencia de mensajes de error; una secuencia vacía acepta la corrida.
-- `execute(run, context)`: ejecuta una corrida y devuelve `RunResult`.
+- `backend_id`: the same name as the entry point.
+- `backend_version`: version identifying the implementation.
+- `thread_safe`: concurrency is allowed only when this is true.
+- `validate(run)`: returns error messages; an empty sequence accepts the run.
+- `execute(run, context)`: executes one run and returns `RunResult`.
 
-El entry point puede apuntar a una clase (se instancia sin argumentos) o a un objeto ya creado. `run` es un `RunSpec` con `run_id`, sistema, escenario, configuración, repetición, semilla y sus parámetros. `context` es `ExecutionContext`: contiene número de intento, carpeta de trabajo, almacén de artefactos, fecha límite monotónica opcional y señal cooperativa de cancelación. El backend puede guardar bytes con `context.artifacts.put(nombre, contenido, tipo_mime, versión_esquema)`; recibe una referencia con URI SHA-256, hash y tamaño.
+The entry point may target a class (instantiated without arguments) or an existing object. `run` is a `RunSpec` with `run_id`, system, scenario, configuration, repetition, seed, and parameters. `context` is an `ExecutionContext` with attempt number, work directory, artifact store, optional monotonic deadline, and cooperative cancellation signal. Store bytes with `context.artifacts.put(name, content, mime_type, schema_version)`; it returns an `ArtifactRef` with SHA-256 URI, hash, and size.
 
-El runner verifica que el resultado corresponda al `run_id`, que tenga un estado terminal, que las métricas sean coherentes y que los artefactos no declaren tamaños negativos. Las excepciones de `execute` se registran como fallos de infraestructura. Para un resultado válido, SimOps añade al campo de procedencia el ID y la versión reales del backend.
+The runner verifies matching `run_id`, terminal status, metric consistency, and non-negative artifact sizes. Exceptions from `execute` are infrastructure failures. SimOps adds the real backend ID and version to result provenance.
 
-## Estados, resultados y reintentos
+## Run states and retries
 
-El estado operativo de una corrida está separado del resultado funcional del sistema:
+Operational run state is separate from functional system outcome:
 
-- Estados definidos para corridas: `planned`, `queued`, `running`, `completed`, `failed_system`, `failed_infrastructure`, `cancelled` e `interrupted`. El runner local pasa normalmente de planificada a ejecución y a un estado terminal; `queued` está definido en el contrato, pero no se persiste como fase de cola en este runner.
-- Resultados funcionales: `success`, `failure`, `expected_abort`, `unknown` o `not_applicable`. Por ejemplo, una corrida puede terminar operativamente como `completed` y tener resultado funcional `failure`.
-- Estados de campaña producidos por el runner: `running`, `paused`, `failed`, `completed_with_system_failures` o `completed`. `paused` indica que quedan corridas pendientes, por ejemplo por una petición de cancelación o por agotarse el presupuesto. `failed` indica que quedan fallos de infraestructura/interrupciones que no se reintentaron. Los fallos del sistema se reflejan en `completed_with_system_failures`.
+- Run states: `planned`, `queued`, `running`, `completed`, `failed_system`, `failed_infrastructure`, `cancelled`, and `interrupted`. The local runner generally moves from planned to executing and then terminal; `queued` is defined in the contract but is not persisted as a queue phase.
+- Functional outcomes: `success`, `failure`, `expected_abort`, `unknown`, or `not_applicable`. A run can be operationally `completed` with `system_outcome=failure`.
+- Campaign states: `running`, `paused`, `failed`, `completed_with_system_failures`, or `completed`. `paused` means runs remain, for example after cancellation or budget exhaustion. `failed` means infrastructure failures/interruption remain without retries. Functional failures are reflected in `completed_with_system_failures`.
 
-Cada intento se conserva en el diario SQLite. Un fallo de infraestructura o una interrupción puede volver a intentarse hasta `max_infrastructure_retries` veces además del primer intento. Los fallos funcionales del sistema no se reintentan automáticamente. Al reanudar, las corridas completas, fallidas del sistema o canceladas se consideran terminales; las de infraestructura/interrumpidas se retoman solo si no se agotó el límite. Un presupuesto vencido impide empezar más corridas; el backend recibe la fecha límite para poder consultarla durante la ejecución.
+Each attempt is stored in SQLite. Infrastructure failures and interruptions can retry up to `max_infrastructure_retries` in addition to the first attempt. Functional failures are not retried automatically. On resume, completed, system-failed, and cancelled runs are terminal; infrastructure-failed or interrupted runs resume only if retries remain. An expired budget prevents new runs; the backend receives a deadline to check during execution.
 
-## Métricas e informes
+## Metrics and reports
 
-Las métricas las entrega el backend dentro de `RunResult`; el CLI no implementa un catálogo ni calcula mediciones de simulador. Cada `MetricValue` incluye `metric_id`, valor, unidad opcional, `definition_version` y estado. Los estados admitidos son `observed`, `not_applicable`, `missing` e `invalid`. Un valor observado requiere dato; para los otros estados el valor debe ser `null` y se exige un motivo. La ausencia o invalidez no equivale a cero.
+Metrics are emitted by the backend in `RunResult`; the CLI does not calculate simulator measurements. Each `MetricValue` contains `metric_id`, value, optional unit, `definition_version`, and state. Supported states are `observed`, `not_applicable`, `missing`, and `invalid`. An observed value requires data; other states use `null` and a reason. Missing or invalid data is never treated as zero.
 
-Los informes disponibles son `analysis.json`, `report.md` y `report.html`, generados desde un modelo de análisis común. Agrupan por sistema, escenario y configuración. Presentan corridas planificadas y con resultado, conteos de estados y resultados funcionales, y resumen de métricas:
+Reports are `analysis.json`, `report.md`, and `report.html`, generated from one analysis model and grouped by system, scenario, and configuration. They show planned/result runs, state/outcome counts, and metric summaries:
 
-- Numéricas: cantidad observada/planificada, faltantes, media, mediana, cuartiles, mínimo y máximo.
-- Booleanas: cantidad verdadera y proporción sobre valores observados.
-- Otros valores: tipo y valores distintos observados.
-- También se conservan unidades, versiones de definición, estados no observados y motivos.
-- Para éxito, muestran éxitos entre resultados funcionales conocidos e intervalo de Wilson del 95%; excluyen resultados desconocidos/no aplicables y corridas con estado `failed_infrastructure` o `interrupted` de ese denominador.
+- Numeric: observed/planned count, missing count, mean, median, quartiles, minimum, and maximum.
+- Boolean: true count and proportion among observed values.
+- Other values: type and distinct observed values.
+- All summaries preserve units, metric-definition versions, non-observed states, and reasons.
+- Success shows known outcomes and a 95% Wilson interval; unknown/not-applicable outcomes and infrastructure-failed/interrupted runs are excluded from that denominator.
 
-El JSON es la salida estructurada. El informe declara que describe solo la campaña suministrada y recomienda separar selección de configuración y confirmación en escenarios o semillas distintos. El renderizador actual es resumido: no genera gráficos, PDF ni análisis de comparación entre configuraciones. Tampoco muestra el detalle de todos los intentos en las tablas del informe; para inspección operativa, consulta `status` y conserva la base SQLite.
+JSON is the structured source. Reports state that conclusions apply only to the supplied campaign and recommend separate scenarios or seeds for configuration selection and holdout confirmation. The current renderer does not include charts, PDF, or statistical comparison between configurations. It also does not show every attempt in report tables; inspect `status` and retain SQLite for operational history.
 
-## Backend `demo` y límites actuales
+## Synthetic `demo` backend and limits
 
-`demo` es un benchmark sintético determinista con variación pseudoaleatoria basada en la semilla (o en el ID de corrida si no se indica). Emite `task.success`, `task.duration_s`, `safety.collision_count`, `navigation.path_length_m` y `safety.min_clearance_m`. Acepta `max_speed_mps` entre 0.1 y 1.5, `controller_gain` entre 0.2 y 2.5 e `inflation_radius_m` entre 0.05 y 1.0. Los escenarios aceptan `difficulty` entre 0 y 1 y `distance_m` positivo. Si se omiten, usa valores predeterminados.
+`demo` is deterministic synthetic data with pseudo-random variation from the supplied seed (or run ID). It emits `task.success`, `task.duration_s`, `safety.collision_count`, `navigation.path_length_m`, and `safety.min_clearance_m`. It accepts `max_speed_mps` 0.1–1.5, `controller_gain` 0.2–2.5, and `inflation_radius_m` 0.05–1.0. Scenarios accept `difficulty` 0–1 and positive `distance_m`; defaults apply when omitted.
 
-El backend genera números mediante fórmulas sintéticas; no inicia un simulador, no modela la física, no ejecuta ROS ni describe el rendimiento de un robot. Sus métricas sirven para explorar el flujo del CLI, comprobar formatos y producir un informe de ejemplo. No deben usarse como evidencia sobre un robot ni sobre navegación real.
+These values come from formulas. `demo` does not start a simulator, model physics, run ROS, or describe robot performance. Use it to learn the CLI, validate formats, and generate an example report only.
 
-## Ajuste de parámetros con `tune`
+## Parameter tuning
 
-`simops tune` genera candidatos, ejecuta para cada uno la matriz de campañas definida y compara las métricas declaradas. El ejemplo completo está en [examples/demo-tuning.json](../examples/demo-tuning.json). Para usar TPE, instala la dependencia opcional dentro del entorno virtual:
+`simops tune` proposes candidates, runs the declared campaign matrix for each, and compares specified metrics. See [examples/demo-tuning.json](../examples/demo-tuning.json). To use TPE, install the optional dependency:
 
 ```sh
 python -m pip install -e ".[optimize]"
 simops tune examples/nav2-turtlebot3/tuning-tpe.json
 ```
 
-La forma general del manifiesto es un objeto JSON con `schema_version: "0.1.0"`, `backend` y `tuning`. En `tuning`:
+A tuning manifest contains `schema_version: "0.1.0"`, `backend`, and `tuning`. The `tuning` object supports:
 
-- `tuning_id` y `title` identifican la búsqueda; `strategy` admite `lhs` o `tpe` (por defecto `lhs`).
-- `budget` es un entero positivo: indica cuántos ensayos nuevos solicita la estrategia en cada invocación. El resultado TPE puede incluir también ensayos anteriores del estudio. LHS usa el `seed` configurado para muestrear; si se repite el mismo manifiesto con la misma semilla, puede proponer los mismos parámetros, cuyas corridas ya completas se reutilizan desde el diario.
-- `base_configuration` es opcional. Cada vector de parámetros propuesto se combina con ella y la propuesta reemplaza cualquier valor con el mismo nombre.
-- `parameters` define el espacio de búsqueda. `kind` puede ser `float`, `integer` o `categorical`. Los parámetros numéricos requieren límites `lower` y `upper`; opcionalmente admiten `step` o muestreo `log`. Los categóricos declaran `choices`.
-- `objectives` contiene uno o más `metric_id` con dirección `minimize` o `maximize`.
-- `constraints` es opcional. Cada restricción declara `constraint_id`, descripción, `metric_id`, operador `<=` o `>=` y un umbral numérico finito.
-- `campaign` describe las corridas de cada candidato: `systems`, `scenarios`, `repetitions` y, opcionalmente, `seeds`, concurrencia, reintentos, presupuesto de pared y metadatos. Usa el mismo escenario y las mismas semillas para evaluar cada candidato.
-- `seed`, `workers`, `n_startup_trials`, `study_name` y `storage_url` configuran el muestreo/estudio; `workers` y `n_startup_trials` son enteros positivos. La semilla del estudio por defecto es 0, los workers por defecto son 1, el inicio TPE por defecto usa 10 ensayos y el nombre del estudio por defecto es `tuning_id`.
+- `tuning_id`, `title`, and `strategy` (`lhs` or `tpe`; default `lhs`).
+- Positive integer `budget`: new trials requested per invocation. TPE results can also include earlier study trials. LHS uses `seed`; rerunning the same manifest can propose the same parameters and reuse completed campaigns.
+- Optional `base_configuration`; each candidate overlays values with matching names.
+- `parameters` with kind `float`, `integer`, or `categorical`. Numeric parameters require `lower` and `upper`, and may specify `step` or log sampling. Categorical parameters declare `choices`.
+- One or more `objectives` with `metric_id` and direction `minimize` or `maximize`.
+- Optional `constraints` with `constraint_id`, description, `metric_id`, operator `<=` or `>=`, and a finite numeric threshold.
+- `campaign` with `systems`, `scenarios`, and `repetitions`, plus optional seeds, concurrency, retries, wall-time budget, and metadata. Use the same scenarios/seeds for every candidate.
+- Optional `seed`, `workers`, `n_startup_trials`, `study_name`, and `storage_url`. Defaults: study seed 0, one worker, 10 TPE startup trials, and `study_name=tuning_id`.
 
-Para cada candidato, SimOps ejecuta el producto de sistemas, escenarios y repeticiones y conserva cada observación por corrida. Los objetivos agregan por `mean` de forma predeterminada; se puede elegir `median`, `min`, `max` o `p95`. Una métrica debe estar observada y ser numérica en cada corrida; si falta, no es numérica o no cubre toda la matriz, el candidato queda `invalid` y no participa en el frente Pareto. Los fallos de infraestructura quedan como tales, sin asignarles un valor ficticio. Una métrica booleana, como `task.success`, se convierte a 0/1 antes de calcular la media, por lo que su media representa la proporción de éxitos.
+Every candidate expands the systems × scenarios × repetitions matrix; each run result is retained. Objectives use `mean` by default and support `median`, `min`, `max`, and `p95`. A metric must be observed, numeric, and cover every run; otherwise the candidate is invalid and excluded from the Pareto front. Infrastructure failures remain visible and receive no fabricated objective value. Boolean metrics such as `task.success` convert to 0/1 for aggregation.
 
-Las restricciones usan `worst_case` por defecto: máximo para `<=` y mínimo para `>=`, por lo que un solo incumplimiento vuelve no factible al candidato. Se puede escoger explícitamente `mean`, `median`, `min`, `max` o `p95`; una métrica ausente o sin cobertura completa vuelve la evaluación inválida. Los resultados incluyen el frente de Pareto de los candidatos factibles; con varios objetivos no se escoge automáticamente un ganador único. Las restricciones guían la búsqueda y no constituyen una garantía de seguridad.
+Constraints use `worst_case` by default: maximum for `<=` and minimum for `>=`, so one violation makes the candidate infeasible. Explicit aggregations `mean`, `median`, `min`, `max`, and `p95` are also available. Missing or incomplete metrics invalidate an evaluation. With multiple objectives, SimOps returns the feasible Pareto front instead of selecting one winner. Constraints guide search; they do not certify safety.
 
-LHS no requiere dependencias adicionales. TPE usa Optuna; sin `storage_url`, el estudio persistente se guarda bajo `.simops/optuna/` junto al `--store` predeterminado (si cambias `--store`, la carpeta `optuna` se crea junto a esa base). Funciona con un worker. Con `storage_url` se utiliza la URL proporcionada. Varios workers requieren un almacén RDB compartido, como PostgreSQL o MySQL; SQLite solo se admite con un worker. Al invocar otra vez el mismo estudio TPE, `budget` cuenta los ensayos nuevos de esa invocación y el resultado conserva también el historial existente.
+LHS needs no extra dependency. TPE uses Optuna; without `storage_url`, its study persists under `.simops/optuna/` next to the default `--store`. One worker is supported with SQLite. Multiple workers require shared RDB storage such as PostgreSQL or MySQL. On a repeated TPE study, `budget` counts new trials for that invocation while the result includes prior history.
 
-`tune` genera `tuning.json` y `tuning.md` bajo `.simops/tunings/<id-de-búsqueda>` (o bajo el `--result-dir` indicado). Los candidatos y sus estados, parámetros, objetivos, restricciones y motivos de invalidez/fallo quedan en el JSON; el Markdown resume el frente Pareto y muestra factibilidad y márgenes de restricción de todos los candidatos. El diario de campañas indicado por `--store` conserva las corridas usadas para evaluar candidatos. Trata la búsqueda como exploratoria y confirma finalistas con escenarios o semillas hold-out antes de afirmar que mejoran.
+`tune` writes `tuning.json` and `tuning.md` under `.simops/tunings/<tuning-id>` or the provided `--result-dir`. JSON retains candidate states, parameters, objectives, constraints, and failure reasons; Markdown summarizes the Pareto front and constraint margins. The campaign journal stores runs used to evaluate candidates. Treat search as exploratory and confirm finalists on held-out scenarios or seeds.
 
-## Operación por MCP
+## Robot capability profiles
 
-Instala el extra MCP y configura un workspace. El servidor es local por `stdio`; los manifiestos que el agente puede usar deben estar en `workspace/manifests`:
+Declare the footprint, kinematic limits, and available signals before tuning. Profiles are versioned JSON:
+
+```sh
+simops profile validate examples/robot-profiles/turtlebot3-demo.json
+```
+
+In a tuning manifest, `robot_profile` points to a profile relative to that manifest. SimOps checks that upper bounds for `controller.vx_max` and `controller.wz_max` fit the declared envelope. The backend must map those parameters into the actual configuration and record effective values. Profile declarations must come from manufacturer data or measurement; they do not replace physical calibration or certified safety criteria.
+
+## MCP operation
+
+Install the MCP extra and configure a workspace. Agent-accessible manifests belong under `workspace/manifests`:
 
 ```sh
 python -m pip install -e ".[mcp]"
@@ -274,26 +269,14 @@ cp examples/robot-profiles/turtlebot3-demo.json workspace/robot-profiles/
 simops mcp --workspace ./workspace
 ```
 
-El allowlist por defecto solo permite `demo`. Para usar el ejemplo Nav2, el operador debe permitirlo de forma explícita con `simops mcp --workspace ./workspace --allow-backend nav2-docker`. La tool MCP puede iniciar el Docker instalado en esa máquina. Instalar un plugin por sí solo no habilita su uso. MCP ofrece tools para listar manifiestos/backends, validar campañas y afinados, planificar campañas, iniciar y consultar ejecuciones, reanudar/cancelar campañas, renderizar informes e iniciar búsquedas. No expone herramientas de shell ni rutas arbitrarias. El límite de corridas, paralelismo, tiempo y presupuesto de afinado está documentado en [mcp.md](mcp.md).
+Only `demo` is allowed by default. To use Nav2, the operator must explicitly enable it with `--allow-backend nav2-docker`. MCP can start Docker installed on that host. Installing a plugin does not enable it. The tool list includes manifest/backend inspection, validation, planning, campaign execution/status/results, resumption/cancellation, report generation, and tuning. There is no shell tool or arbitrary path access. See [mcp.md](mcp.md) for quotas and boundaries.
 
-## Funciones aún no disponibles
+`get_campaign_result` returns structured metrics grouped by scenario and configuration. `render_report` writes JSON, Markdown, and HTML files locally and returns workspace-relative paths. MCP does not expose artifact contents or the full per-attempt event history.
 
-- El backend Nav2/TurtleBot3 solo implementa la ruta sandbox indicada; otros simuladores requieren un adapter específico.
-- No hay comando CLI para cancelar corridas; la cancelación está disponible en MCP y es cooperativa.
-- MCP entrega el resumen estructurado por escenario y configuración con `get_campaign_result`; no expone el contenido de artefactos ni el historial completo de cada intento.
-- No hay informe PDF, gráficos ni comparación estadística entre configuraciones.
+## Current limitations
 
-
-## Perfil de capacidades del robot
-
-Describe la huella, el límite cinemático y las señales disponibles antes de iniciar el afinado. El perfil es JSON versionado y se conserva junto al manifiesto de tuning:
-
-```sh
-simops profile validate examples/robot-profiles/turtlebot3-demo.json
-```
-
-En un manifiesto, `"robot_profile"` apunta a un perfil relativo a ese archivo. SimOps comprueba que las cotas de `controller.vx_max` y `controller.wz_max` respeten los límites declarados. El backend debe implementar la traducción de parámetros a la configuración real y registrar los valores efectivos. Si el robot o simulador requieren más señales, crea un backend instalable con el contrato descrito en `docs/backend-authoring.md`; el núcleo acepta adapters con entry point `simops.backends`.
-
-## Restricciones por corrida
-
-Una restricción numérica es de peor caso en todas las corridas candidatas por defecto. Usa `aggregation: "mean"` solo en criterios que sean tasas poblacionales y cuyo umbral admita fallos individuales. Los objetivos aceptan `mean`, `median`, `min`, `max` y `p95`. Las semillas y escenarios de validación final deben estar separados del screening y nunca deben elegirse después de ver los resultados.
+- The Nav2/TurtleBot3 adapter covers only the bundled sandbox route; other simulators need their own adapter.
+- CLI cancellation is not available; MCP cancellation is cooperative.
+- The renderer has no PDF or charts and does not yet produce a statistical comparison between configurations.
+- Profile bounds validate configured values; the backend must also verify effective values and observed command limits.
+- The included Nav2 run does not provide contact events, ground truth, footprint clearance, localization error, ROS diagnostics, or resource telemetry.

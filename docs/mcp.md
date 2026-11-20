@@ -1,8 +1,8 @@
-# MCP local de SimOps
+# Local MCP server
 
-El server MCP es un adaptador fino sobre las mismas operaciones que usa el CLI. Usa el SDK oficial de Python por transporte `stdio`; no abre un puerto de red.
+The MCP server is a thin adapter over the same operations as the CLI. It uses the official Python SDK over `stdio`; it does not open a network port.
 
-## Instalación e inicio
+## Install and start
 
 ```sh
 python -m pip install -e ".[mcp]"
@@ -11,42 +11,42 @@ cp examples/demo-campaign.json workspace/manifests/
 simops mcp --workspace ./workspace
 ```
 
-Configura el host MCP para iniciar ese comando en un proceso local. El workspace contiene `manifests/`, perfiles de robot bajo `robot-profiles/` y `.simops/`; campañas, artefactos, estudios TPE e informes quedan bajo `.simops/`. Los perfiles deben resolver dentro del workspace, nunca fuera.
+Configure your MCP host to launch that command as a local process. The workspace contains `manifests/`, robot profiles under `robot-profiles/`, and `.simops/`; campaigns, artifacts, Optuna studies, and reports are stored under `.simops/`. Profiles must resolve inside the workspace.
 
-Si el operador instaló un adapter fiable, debe habilitarlo explícitamente:
+If the operator installed a backend, it must be enabled explicitly:
 
 ```sh
 simops mcp --workspace ./workspace --allow-backend demo --allow-backend nav2-docker
 ```
 
-La lista predeterminada solo incluye `demo`. Instalar un plugin de backend no basta para que el LLM pueda seleccionarlo.
+The default allowlist contains only `demo`. Installing a plugin does not allow the LLM to select it.
 
-## Herramientas
+## Tools
 
-| Tool MCP | Función |
+| MCP tool | Function |
 |---|---|
-| `list_backends` | Lista adapters instalados y permitidos por el operador. |
-| `list_manifests` | Lista nombres JSON en el directorio de manifiestos. |
-| `validate_campaign` | Valida un manifiesto sin empezar corridas ni guardarlo. |
-| `plan_campaign` | Expande y devuelve el plan de ejecuciones. |
-| `start_campaign` | Registra la huella y ejecuta en segundo plano. |
-| `resume_campaign` | Reanuda intentos pendientes de una campaña del mismo workspace. |
-| `get_campaign_status` | Devuelve estado de campaña, corridas, intentos y último evento. |
-| `get_campaign_result` | Devuelve el análisis canónico con métricas por sistema, escenario y configuración. |
-| `cancel_campaign` | Solicita cancelación cooperativa del job activo. |
-| `render_report` | Genera JSON, Markdown y HTML desde resultados guardados. |
-| `validate_tuning` | Comprueba perfil, parámetros extremos, presupuesto, escenarios y criterios de un tuning antes de ejecutarlo. |
-| `start_tuning` | Ejecuta el manifiesto de afinado con LHS o TPE permitidos. |
-| `get_tuning_result` | Devuelve el resultado guardado o estado del afinado. |
+| `list_backends` | List installed adapters allowed by the operator. |
+| `list_manifests` | List JSON manifest names in the workspace. |
+| `validate_campaign` | Validate a manifest without running or saving campaign work. |
+| `plan_campaign` | Expand and return the run plan. |
+| `start_campaign` | Register the fingerprint and run in the background. |
+| `resume_campaign` | Resume pending attempts for a campaign in the same workspace. |
+| `get_campaign_status` | Return campaign/run/attempt states and recent activity. |
+| `get_campaign_result` | Return canonical metrics grouped by system, scenario, and configuration. |
+| `cancel_campaign` | Request cooperative cancellation of an active job. |
+| `render_report` | Generate JSON, Markdown, and HTML reports from stored results. |
+| `validate_tuning` | Check profile, parameter limits, budget, scenarios, and criteria before tuning. |
+| `start_tuning` | Run an allowed LHS or TPE tuning manifest. |
+| `get_tuning_result` | Return a saved tuning result or its current state. |
 
-## Límites del workspace
+## Workspace boundaries
 
-- Las tools reciben un nombre de archivo simple terminado en `.json`, no una ruta arbitraria. Se rechazan rutas con directorios y symlinks; la búsqueda se limita a `<workspace>/manifests`.
-- Por defecto se permiten hasta 500 corridas por campaña, 8 corridas paralelas, una hora de pared, 50 candidatos por invocación de afinado y 5.000 corridas totales por afinado.
-- No hay tool para shell, Python arbitrario, acceso a archivos externos, SSH ni selección de hardware real.
-- El runner usa SQLite local. Un MCP instalado en una estación de trabajo debe compartir el mismo workspace para ver y reanudar una campaña.
-- SIGINT y la tool de cancelación envían una señal cooperativa; un adapter en curso debe consultar su `ExecutionContext` y limpiar el proceso del simulador.
-- Los plugins de backend son código Python de confianza. El operador solo debe instalar y permitir adapters revisados; el allowlist MCP no puede aislar un plugin malicioso.
-- Stdio confía en el host local que lanza el proceso. El server no está configurado para exposición HTTP remota.
+- Tools accept a simple `.json` filename, not an arbitrary path. Paths with directories and symlinks are rejected; lookup is restricted to `<workspace>/manifests`.
+- Defaults allow up to 500 runs per campaign, 8 parallel runs, one hour of wall time, 50 candidates per tuning invocation, and 5,000 total runs per tuning.
+- There is no shell, arbitrary Python, external file access, SSH, or real-hardware selection tool.
+- The runner uses local SQLite. An MCP process must use the same workspace to inspect and resume campaigns.
+- SIGINT and the cancellation tool send cooperative signals. An active adapter must check its `ExecutionContext` and clean up its simulator process.
+- Backend plugins are trusted Python code. The MCP allowlist does not sandbox a malicious plugin; operators should install and enable only reviewed adapters.
+- Stdio trusts the local host that launches the process. The server is not configured for remote HTTP exposure.
 
-Las tools son asíncronas y el inicio de una campaña/afinador retorna un ID; el agente consulta después su estado. Al terminar, `get_campaign_result` expone las métricas estructuradas al agente y `render_report` genera JSON, Markdown y HTML locales. Para afinados de larga duración, el manifiesto determina presupuesto, réplicas y objetivos; el informe advierte que los finalistas necesitan confirmación hold-out.
+Campaigns and tuning are asynchronous: start tools return an ID and the agent checks status afterward. When a campaign finishes, `get_campaign_result` exposes structured metrics to the agent; `render_report` also generates local JSON, Markdown, and HTML files. Long-running tuning uses the manifest's budget, repetitions, and objectives; finalists should be confirmed on holdout scenarios or seeds.

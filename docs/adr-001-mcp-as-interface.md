@@ -1,19 +1,19 @@
-# ADR-001 — Mantener el núcleo de campañas independiente de MCP
+# ADR-001 — Keep the campaign core independent of MCP
 
-- Estado: aceptada como decisión de diseño inicial; se revisará al implementar el API.
-- Fecha: 2026-11-19.
+- Status: accepted as an initial design decision; revisit as the application API evolves.
+- Date: 2026-11-19.
 
-## Contexto
+## Context
 
-Hay servidores MCP que exponen control y observación de Gazebo/ROS. El objetivo de este repo también incluye campañas reanudables, evaluación, optimización y reportes; no queremos que la lógica de dominio dependa de una interfaz de agente.
+MCP servers can expose control and observation for Gazebo/ROS. This project also covers resumable campaigns, evaluation, optimization, and reporting. Domain logic should not depend on an agent interface.
 
-## Decisión
+## Decision
 
-El core y la API de aplicación serán utilizables sin un LLM y sin el SDK MCP. El servidor MCP se añade como adaptador que traduce herramientas tipadas a operaciones de aplicación existentes.
+The core and application API must work without an LLM or the MCP SDK. The MCP server is an adapter that maps typed tools to existing application operations.
 
-## Consecuencias
+## Consequences
 
-- Una CLI y el MCP comparten lógica, permisos, persistencia y validación.
-- Se pueden probar campañas y renderizadores sin crear una sesión LLM.
-- La plataforma puede integrar otros clientes en el futuro.
-- El transporte MCP no se trata como una innovación sustantiva por sí misma.
+- CLI and MCP share validation, persistence, policy, and application logic.
+- Campaigns and report renderers can be tested without an LLM session.
+- Other clients can integrate with the application API later.
+- MCP transport alone is not treated as a substantive research contribution.

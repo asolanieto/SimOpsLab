@@ -1,13 +1,13 @@
-# Ejecución local y almacenamiento
+# Local execution and storage
 
-## Recorrido
+## Workflow
 
 ```text
-manifiesto JSON → planner → validación de adapter → SQLite → worker local
-                → adapter → resultado + métricas + artefactos → análisis JSON → Markdown/HTML
+JSON manifest → planner → adapter validation → SQLite → local worker
+              → adapter → result + metrics + artifacts → JSON analysis → Markdown/HTML
 ```
 
-Instalación mínima del núcleo: `python -m pip install -e .`. `demo` es un benchmark sintético para probar la instalación y los formatos; `nav2-docker` es un adapter de ejemplo que requiere construir la imagen y tener Docker accesible.
+Minimal core installation: `python -m pip install -e .`. `demo` is a synthetic backend for checking installation and output formats; `nav2-docker` is an example adapter that needs its image built and Docker available.
 
 ```sh
 simops validate examples/demo-campaign.json
@@ -18,45 +18,45 @@ simops resume demo-navigation-smoke
 simops report demo-navigation-smoke
 ```
 
-La base predeterminada es `.simops/campaigns.sqlite3`; los informes van bajo `.simops/reports/`. `--store` y `--report-dir` permiten usar otras ubicaciones.
+The default database is `.simops/campaigns.sqlite3`; reports go under `.simops/reports/`. `--store` and `--report-dir` select other paths.
 
-## Diario y reanudación
+## Journal and resumption
 
-SQLite conserva:
+SQLite stores:
 
-- Manifiesto resuelto y huella SHA-256, backend y versión.
-- Especificación de cada corrida, último estado y resultado.
-- Un registro por intento, con marcas de tiempo y resultado terminal.
-- Eventos append-only de campaña y corrida.
+- Resolved manifest and SHA-256 fingerprint, backend, and version.
+- Each run specification, latest state, and result.
+- One record per attempt, with timestamps and terminal result.
+- Append-only campaign and run events.
 
-La transacción que termina un intento actualiza su proyección de estado y añade el evento correspondiente. Repetir una orden con la misma huella omite corridas ya terminales. Si el proceso se encuentra con intentos `running` de una ejecución anterior, los registra como `interrupted` y aplica el límite de reintentos de infraestructura.
+The transaction that completes an attempt updates its state projection and appends the matching event. Repeating a command with the same fingerprint skips terminal runs. If the process finds `running` attempts from an earlier process, it marks them `interrupted` and applies the infrastructure retry limit.
 
-Una huella diferente para un `campaign_id` existente se rechaza: cambiar escenarios, parámetros o versión de backend requiere un ID nuevo. Los IDs por corrida se vuelven a calcular al ejecutar para detectar mutación de un plan después de haber asignado sus IDs.
+A different fingerprint for an existing `campaign_id` is rejected. Changing scenarios, parameters, or backend version requires a new ID. Run IDs are recomputed at execution time to detect mutation after planning.
 
-Antes de recuperar o ejecutar, el runner toma un bloqueo del sistema operativo asociado a la base SQLite y al `campaign_id`. Las llamadas locales concurrentes a la misma campaña se serializan; el bloqueo se libera automáticamente si el proceso termina. No coordina bases distintas ni hosts remotos.
+Before recovery or execution, the runner locks the SQLite database and `campaign_id` using an OS lock. Concurrent local requests for one campaign are serialized; the lock is released if the process exits. This does not coordinate separate databases or remote hosts.
 
-## Intentos, presupuesto y cancelación
+## Attempts, budget, and cancellation
 
-- El fallo del sistema bajo prueba se conserva separado del estado operativo; por ejemplo, `completed` junto con `system_outcome=failure`.
-- Las excepciones del adapter son fallos de infraestructura y solo esos fallos se reintentan automáticamente.
-- La fecha límite de campaña impide empezar más corridas; no interrumpe por la fuerza una llamada bloqueante.
-- SIGINT y las tools MCP solicitan cancelación cooperativa. Cada adapter recibe evento de cancelación, deadline monotónico, carpeta de trabajo por intento y almacén de artefactos.
-- En una caída alrededor de la llamada externa puede haber ejecución repetida al reanudar. SimOps no promete “exactamente una vez”; un adapter de trabajo remoto debe reconocer `run_id` e intento o detectar y limpiar procesos huérfanos.
-- `max_parallel > 1` solo se acepta si el adapter declara `thread_safe=True`; todos los runs usan el mismo objeto de adapter.
+- System-under-test failure is kept separate from operational run state, for example `completed` with `system_outcome=failure`.
+- Adapter exceptions are infrastructure failures; only those are retried automatically.
+- A campaign deadline prevents new runs from starting; it does not forcibly interrupt a blocking call.
+- SIGINT and MCP tools request cooperative cancellation. Each adapter receives a cancellation event, monotonic deadline, per-attempt workspace, and artifact store.
+- A crash around an external call may cause a run to be repeated on resume. SimOps does not promise exactly-once execution; remote adapters should recognize `run_id` and attempt number or clean up orphan processes.
+- `max_parallel > 1` is accepted only when the adapter declares `thread_safe=True`; all runs share one adapter instance.
 
-## Artefactos
+## Artifacts
 
-El adapter puede guardar bytes usando `context.artifacts.put(...)`. El almacén calcula SHA-256, escribe a un path content-addressed mediante un rename atómico y devuelve un `ArtifactRef`. La lectura vuelve a verificar el hash. Los blobs viven bajo `.simops/artifacts/`; el workspace de cada intento está bajo `.simops/work/`.
+An adapter can store bytes with `context.artifacts.put(...)`. The store computes SHA-256, writes to a content-addressed path through an atomic rename, and returns an `ArtifactRef`. Reads verify the hash again. Blobs live under `.simops/artifacts/`; each attempt workspace lives under `.simops/work/`.
 
-El runner conserva referencias, pero no inventa el significado de los archivos. Los plugins de métrica/adapters deben nombrar la fuente, unidad, versión y estado de cada medida. Los artefactos no se copian a la base SQLite.
+The runner stores references but does not infer file meaning. Metric plugins/adapters must provide source, unit, version, and state. Artifacts are not stored in SQLite.
 
-## API de adapter
+## Adapter entry point
 
-El paquete de adapter publica un entry point Python:
+The adapter package publishes a Python entry point:
 
 ```toml
 [project.entry-points."simops.backends"]
-mi_backend = "mi_paquete.backend:Backend"
+my_backend = "my_package.backend:Backend"
 ```
 
-La clase sin argumentos implementa `backend_id`, `backend_version`, `thread_safe`, `validate(run)` y `execute(run, context)`. El host llama `validate` antes de registrar la campaña. El código del plugin es confiable por instalación; el LLM no puede cargar un módulo arbitrario desde el manifiesto.
+The no-argument class implements `backend_id`, `backend_version`, `thread_safe`, `validate(run)`, and `execute(run, context)`. The host calls `validate` before registering the campaign. Installed plugin code is trusted; an LLM cannot load an arbitrary module from a manifest.

@@ -1,27 +1,27 @@
-# ADR-003 — Runner local y persistencia reanudable
+# ADR-003 — Local runner and resumable persistence
 
-- Estado: aceptada para el primer producto ejecutable.
-- Fecha: 2026-11-19.
+- Status: accepted for the first executable product.
+- Date: 2026-11-19.
 
-## Decisión
+## Decision
 
-- Mantener `CampaignSpec` y los IDs deterministas del planner como identidad de la campaña.
-- Ejecutar adapters Python instalados mediante entry points `simops.backends`; el núcleo no invoca shell ni importa ROS/Gazebo.
-- Empezar con SQLite local, WAL y timeout de bloqueo. Guardar campaña, ejecuciones, intentos y eventos; actualizar el estado de intento y anexar su evento en una transacción.
-- Fijar cada campaña a la huella del manifiesto expandido más `backend_id` y `backend_version`. Una diferencia requiere otro `campaign_id`.
-- Reintentar solo fallos de infraestructura e interrupciones, dentro del límite declarado. Las corridas completas y fallidas funcionalmente no se repiten al reanudar.
-- Guardar artefactos en rutas locales content-addressed por SHA-256; pasar al backend un workspace distinto por corrida/intento.
-- Persistir informes JSON, Markdown y HTML desde el mismo modelo de análisis.
+- Use `CampaignSpec` and deterministic planner IDs as campaign identity.
+- Run installed Python adapters through the `simops.backends` entry point; the core does not invoke a shell or import ROS/Gazebo.
+- Start with local SQLite, WAL, and a lock timeout. Store campaigns, runs, attempts, and events; update an attempt and append its event in one transaction.
+- Bind each campaign to the expanded-manifest fingerprint plus `backend_id` and `backend_version`. A difference requires a new `campaign_id`.
+- Retry only infrastructure failures and interruptions, within the declared limit. Completed runs and functional failures are not repeated on resume.
+- Store artifacts in local SHA-256 content-addressed paths; give each run/attempt a separate adapter workspace.
+- Persist JSON, Markdown, and HTML reports from the same analysis model.
 
-## Garantías y límites
+## Guarantees and limits
 
-La ejecución es *al menos una vez* ante caídas alrededor de un efecto externo. Una base local no puede demostrar si un simulador remoto ejecutó una tarea cuando el proceso muere después de lanzar el trabajo y antes de persistir su resultado. Los adapters deben usar `run_id`/`attempt_number` como clave idempotente y limpiar procesos huérfanos cuando el entorno lo permita.
+Execution is *at least once* around external side effects. A local database cannot prove whether a remote simulator completed a task if the process dies after launch but before the result is stored. Adapters should use `run_id`/`attempt_number` as idempotency keys and clean up orphan processes when possible.
 
-El límite de pared impide iniciar nuevas corridas cuando se agota el presupuesto. No puede matar a la fuerza una llamada bloqueante al backend. La cancelación se transmite por `ExecutionContext` y es cooperativa. SQLite sirve para un coordinador local; no es una base distribuida para workers en varias máquinas.
+The wall-time budget prevents starting new runs after it expires. It cannot forcibly stop a blocking backend call. Cancellation is cooperative through `ExecutionContext`. SQLite supports a local coordinator; it is not a distributed database for workers across machines.
 
-## Consecuencias
+## Consequences
 
-- Se puede instalar el núcleo sin ROS, Gazebo u Optuna.
-- `max_parallel > 1` requiere que el adapter declare explícitamente `thread_safe`.
-- La base SQLite y los blobs locales son sencillos de respaldar, inspeccionar y mover junto al proyecto.
-- Los adaptadores remotos, leases distribuidos, almacenamiento de objetos y limpieza de procesos huérfanos quedan como evolución posterior.
+- The core installs without ROS, Gazebo, or Optuna.
+- `max_parallel > 1` requires an adapter to declare `thread_safe` explicitly.
+- SQLite and local blobs are straightforward to back up, inspect, and move with a project.
+- Remote adapters, distributed leases, object storage, and orphan-process cleanup remain future work.

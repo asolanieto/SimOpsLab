@@ -1,48 +1,52 @@
-# ADR-002 — Estrategia de afinado de parámetros
+# ADR-002 — Parameter tuning strategy
 
-- Estado: aceptada para la primera implementación, pendiente de evaluación comparativa.
-- Fecha: 2026-11-19.
+- Status: accepted for the first implementation; comparative evaluation is still needed.
+- Date: 2026-11-19.
 
-## Contexto
+## Context
 
-Las campañas de simulación pueden ser costosas y ruidosas, con varias semillas y escenarios; criterios como colisión, llegada y holgura deben quedar como restricciones independientes. Una búsqueda por fases y un diseño de screening reproducible sirven como baselines. El núcleo necesita estrategias genéricas e intercambiables para parámetros continuos, discretos y categóricos.
+Simulation campaigns can be expensive and noisy, often span multiple seeds and scenarios, and include criteria such as collision, arrival, and clearance that must remain independent constraints. A staged search and reproducible screening design are useful baselines. The core needs interchangeable strategies for continuous, discrete, and categorical parameters.
 
-## Alternativas
+## Alternatives
 
-### A. Grid o búsqueda por fases como estrategia única
-- Pros: sencilla de explicar y reproducir; buena para pocos parámetros y listas pequeñas.
-- Contras: escala exponencial y la búsqueda OAT puede perder interacciones.
+### A. Grid or staged search as the only strategy
 
-### B. LHS de screening + TPE para el ajuste adaptativo
-- Pros: LHS ofrece cobertura reproducible como baseline; TPE reutiliza historial, admite parámetros mixtos y se integra con objetivos múltiples/constraints mediante Optuna.
-- Contras: necesita trials iniciales, dependencia opcional, estudio persistente y agregación correcta de ruido; las constraints no son garantía formal de seguridad.
+- Pros: easy to explain and reproduce; works for a few parameters and small value lists.
+- Cons: scales exponentially; one-at-a-time search can miss interactions.
 
-### C. Gaussian-process BO / BoTorch desde el inicio
-- Pros: eficiente para problemas caros y continuos; permite BO multiobjetivo y restricciones.
-- Contras: instalación y cómputo más pesados; menos adecuado como única opción para parámetros categóricos o espacios mayores; mayor complejidad de producto.
+### B. LHS screening followed by adaptive TPE
 
-### D. Hyperband/racing como mecanismo de parada
-- Pros: puede ahorrar presupuesto al cortar candidatos que se ven malos con poca fidelidad.
-- Contras: solo funciona bien si ranking/medidas tempranas predicen el resultado completo. Hoy no se ha demostrado que éxito o colisión en navegación queden bien predichos antes del final.
+- Pros: LHS provides reproducible coverage; TPE reuses trial history, supports mixed parameter types, and handles multiple objectives and constraints through Optuna.
+- Cons: requires startup trials, an optional dependency, persistent study storage, and sound treatment of noise. Constraints are not formal safety guarantees.
 
-## Criterios de decisión
+### C. Gaussian-process BO / BoTorch from the start
 
-- Mantener core sin dependencias científicas externas.
-- Comparar con LHS/búsqueda aleatoria bajo el mismo presupuesto de evaluaciones.
-- No convertir seguridad en un término compensable de una función ponderada.
-- Separar error de infraestructura, fallo funcional y medición inválida.
-- Registrar semillas, agregación, parámetros, espacio de búsqueda y versión del optimizador.
-- No usar hardware real como destino del TPE de esta primera versión.
+- Pros: efficient for expensive, low-dimensional continuous problems; supports constrained multi-objective BO.
+- Cons: heavier installation and compute; less suitable as the only method for categorical or larger mixed spaces; higher product complexity.
 
-## Decisión
+### D. Hyperband/racing for early stopping
 
-Implementar LHS como baseline nativo sin dependencias y TPE/Optuna como extra opcional. Las constraints se expresan como residuos donde valor <= 0 es factible. El reporte devuelve el frente de Pareto entre candidatos factibles; el optimizador no escoge un ganador único si el problema tiene varios objetivos.
+- Pros: can save budget by stopping candidates that look poor at low fidelity.
+- Cons: works only if early measurements predict full-run rankings. We have not shown that early success or collision signals predict final navigation outcomes.
 
-La primera integración toma un callback evaluador que ejecuta las corridas y devuelve métricas ya agregadas. TPE soporta almacenamiento Optuna con heartbeat; SQLite queda para un worker y el paralelismo requiere RDB compartido. No habilitar pruning ni optimización sobre hardware real hasta tener evidencia y controles adecuados.
+## Decision criteria
 
-## Consecuencias
+- Keep the core free of external scientific dependencies.
+- Compare against LHS/random search under the same evaluation budget.
+- Do not turn safety into a compensable term in a weighted score.
+- Distinguish infrastructure errors, functional failures, and invalid measurements.
+- Record seeds, aggregation, parameters, search space, and optimizer version.
+- Do not target real hardware with TPE in this initial implementation.
 
-- El resultado no demuestra aún que TPE supere estrategias de referencia. Hace falta una comparación con el mismo presupuesto y protocolo.
-- Se requiere un runner para conectar la función evaluadora a campañas y preservar cada ejecución individual.
-- Se pospone GP BO/BoTorch, sensibilidad Morris/Sobol y racing hasta probar la primera integración.
-- Se añaden puertas de release para validar ruido, constraints, Pareto, persistencia e interrupciones.
+## Decision
+
+Implement LHS as the dependency-free baseline and TPE/Optuna as an optional extra. Constraints use residuals where values `<= 0` are feasible. Reports return the Pareto front of feasible candidates; the optimizer does not pick one winner when several objectives are present.
+
+The first integration uses an evaluator callback that runs campaigns and returns aggregated metrics. TPE supports Optuna storage with heartbeat; SQLite is for one worker, while parallel workers require shared RDB storage. Do not enable pruning or real-hardware tuning until evidence and controls justify them.
+
+## Consequences
+
+- No evidence yet shows that TPE beats reference strategies; compare them under the same budget and protocol.
+- A runner is needed to connect evaluation to campaigns and preserve each individual run.
+- GP BO/BoTorch, Morris/Sobol sensitivity, and racing are deferred until the first integration is evaluated.
+- Release checks cover noise, constraints, Pareto results, persistence, and interruptions.

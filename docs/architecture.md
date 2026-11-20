@@ -1,55 +1,55 @@
-# Arquitectura inicial
+# Architecture
 
-## Límite del sistema
+## System boundary
 
-El núcleo organiza experimentos y resultados. No modela física, no entiende ROS topics, no requiere Gazebo y no envía directamente comandos al hardware. Un adapter traduce entre el contrato del núcleo y el entorno bajo prueba.
+The core organizes experiments and results. It does not model physics, understand ROS topics, require Gazebo, or send commands to hardware. An adapter translates between the core contract and the system under test.
 
-## Componentes
+## Components
 
-- **Spec/validator**: manifiestos declarativos de campaña, escenarios, configuraciones, repeticiones, seeds, métrica y límites.
-- **Planner**: expande matriz experimental en corridas estables con IDs deterministas.
-- **Campaign service**: estado, persistencia, reintentos, presupuesto, concurrencia, cancelación y reanudación.
-- **Backend adapter**: prepara, lanza, observa, finaliza y recoge artefactos de un entorno.
-- **Metric plugins**: extraen medidas de telemetría y artefactos, con versión y validez.
-- **Analysis engine**: valida criterios, calcula grupos e incertidumbre, identifica anomalías y separa exploración/confirmación.
-- **Artifact store**: blobs locales al inicio; interfaz extensible a object storage.
-- **Report renderers**: Markdown y HTML derivados del resultado canónico.
-- **CLI/API**: interfaz de persona; MCP es una integración sobre la misma API de aplicación.
+- **Specification and validation:** declarative campaign, scenario, configuration, repetition, seed, metric, and limit definitions.
+- **Planner:** expands the experiment matrix into stable runs with deterministic IDs.
+- **Campaign service:** state, persistence, retries, budget, concurrency, cancellation, and resumption.
+- **Backend adapter:** prepares, launches, observes, finalizes, and collects artifacts from an environment.
+- **Metric plugins:** derive versioned, validity-aware measurements from telemetry and artifacts.
+- **Analysis engine:** validates criteria, summarizes groups, represents uncertainty, identifies anomalies, and separates screening from confirmation.
+- **Artifact store:** local blobs initially, behind an extensible interface.
+- **Report renderers:** Markdown and HTML derived from the canonical analysis result.
+- **CLI/API:** human interface; MCP is another client of the same application API.
 
-## Estado de implementación
+## Implementation status
 
-Están implementados el planner determinista, parser/validador JSON, runner local con SQLite, artefactos SHA-256, informes JSON/Markdown/HTML, CLI, LHS integrado con campañas y TPE/Optuna opcional. El backend sintético `demo` prueba el núcleo; `nav2-docker` conecta el mismo runner con Nav2/TurtleBot3 sobre un mapa sandbox real.
+Implemented components include the deterministic planner, JSON parser/validator, local SQLite runner, SHA-256 artifacts, JSON/Markdown/HTML reports, CLI, LHS campaign tuning, optional TPE/Optuna, and local MCP server. The synthetic `demo` backend exercises the core; `nav2-docker` connects the same runner to Nav2/TurtleBot3 on a sandbox map.
 
-El adapter `nav2-docker` usa una imagen fijada por digest, lanza una navegación por contenedor y recoge acción, odometría, láser, comandos y logs. Cubre solo el mapa/ruta de demostración; el usuario debe definir escenarios y validación para otros sistemas. `demo` no prueba física, Gazebo ni ROS. TPE necesita la extra Optuna. El MCP stdio existe como extra opcional; por defecto solo permite `demo`, lee manifiestos desde un workspace dedicado y aplica cuotas. Otros simuladores y stacks requieren adapters propios.
+The `nav2-docker` adapter uses an image pinned by digest, runs one navigation per container, and collects action state, odometry, laser scans, commands, and logs. It covers only the bundled demo map/route; users must define scenarios and validation for other systems. `demo` does not test physics, Gazebo, or ROS. TPE requires the Optuna extra. MCP is an optional stdio extra; it defaults to `demo`, reads manifests from a dedicated workspace, and enforces quotas. Other simulators and stacks need their own adapters.
 
-## Ports/adapters propuestos
+## Ports and adapters
 
-1. `ExecutionBackend`: ubicación y presupuesto (local, Docker, SSH, Slurm u otro scheduler).
-2. `ExperimentBackend`: preparación y ejecución de una corrida del sistema bajo prueba.
-3. `ObservationProvider`: señales estructuradas, archivos, logs, bags o telemetría remota.
-4. `ScenarioProvider`: enumera/crea/valida escenarios por backend.
-5. `MetricPlugin`: deriva `MetricValue` desde corrida, señales y artefactos.
-6. `SearchStrategy`: ejecuta una estrategia de ajuste con un evaluador agnóstico al backend; están disponibles LHS y TPE/Optuna.
-7. `ArtifactStore`: guarda/importa archivos y checksums.
-8. `ReportRenderer`: toma el modelo de análisis ya calculado y produce formato.
+1. `ExecutionBackend`: location and budget (local, Docker, SSH, Slurm, or another scheduler).
+2. `ExperimentBackend`: prepare and execute one run of the system under test.
+3. `ObservationProvider`: structured signals, files, logs, bags, or remote telemetry.
+4. `ScenarioProvider`: enumerate, create, and validate backend scenarios.
+5. `MetricPlugin`: derive `MetricValue` from runs, signals, and artifacts.
+6. `SearchStrategy`: tune through a backend-agnostic evaluator; LHS and TPE/Optuna are available.
+7. `ArtifactStore`: save/import files and checksums.
+8. `ReportRenderer`: render an already computed analysis model.
 
-Un adapter de mayor nivel puede implementar varios ports si el primer producto lo necesita. Cada interfaz queda sustituible para evitar acoplamiento del core.
+A higher-level adapter can implement several ports when useful. Interfaces remain replaceable to avoid coupling the core to one stack.
 
-## Estados y fallo
+## States and failures
 
-- Corrida: `planned → queued → running → completed | failed_system | failed_infrastructure | cancelled | interrupted`.
-- Resultado del SUT: `success | failure | expected_abort | unknown | not_applicable`.
-- Estado de cada métrica es independiente: una corrida completa puede contener datos métricos ausentes; una corrida de infraestructura puede conservar métricas parciales.
-- La ejecución debe ser idempotente por `run_id` y persistir transición/evento antes de marcar el trabajo completo.
+- Run: `planned → queued → running → completed | failed_system | failed_infrastructure | cancelled | interrupted`.
+- System outcome: `success | failure | expected_abort | unknown | not_applicable`.
+- Each metric has an independent state. A completed run may contain missing metrics; an infrastructure failure may preserve partial metrics.
+- Execution is idempotent by `run_id`; persist a transition and event before marking the job complete.
 
-## Superficie MCP
+## MCP surface
 
-Lecturas: `list_backends`, `inspect_backend`, `get_campaign`, `get_run`, `get_metric_catalog`, `get_artifact`, `get_report`.
+Read tools: `list_backends`, `list_manifests`, `get_campaign_status`, `get_campaign_result`, and `get_tuning_result`.
 
-Escrituras: `validate_campaign`, `plan_campaign`, `start_campaign`, `pause_campaign`, `resume_campaign`, `cancel_campaign`, `render_report`.
+Write tools: `validate_campaign`, `plan_campaign`, `start_campaign`, `resume_campaign`, `cancel_campaign`, `render_report`, `validate_tuning`, and `start_tuning`.
 
-Las tools de escritura aceptan identificadores o nombres de manifiesto dentro del workspace, registran la solicitud y verifican política de workspace, cuota, concurrencia y timeout. No se expone una herramienta genérica `run_shell`. El MCP local por stdio y sus límites están implementados; un endpoint HTTP o destino de hardware real no se configura ni se habilita por defecto.
+Tools accept IDs or manifest names inside the workspace and enforce workspace policy, quotas, concurrency, and timeouts. There is no generic `run_shell` tool. Local stdio MCP is implemented; HTTP and hardware access are not enabled by default.
 
-## Primer vertical slice
+## First vertical slice
 
-Manifiesto simple → backend simulado de prueba → ejecución única → métricas genéricas → carpeta de artefactos local → JSON de resultado → informe Markdown. Después se integra un backend específico del simulador o robot, conservando los contratos y el núcleo común.
+Simple manifest → test/simulation backend → one run → generic metrics → local artifacts → JSON result → Markdown report. Add simulator- or robot-specific adapters later while preserving the core contracts.

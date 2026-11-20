@@ -1,96 +1,97 @@
-# Plan de trabajo
+# Product plan
 
-## Objetivo
+## Objective
 
-Convertir las herramientas de campañas de TFM_Rover en una plataforma que otras personas puedan conectar a sus propios simuladores, sistemas bajo prueba y métodos de evaluación. Debe permitir que una persona o un LLM configure una campaña, ejecute/reanude/cancele trabajos, inspeccione resultados y genere informes reproducibles.
+Build a reusable platform that lets people connect their simulators, systems under test, and evaluation methods. A person or LLM should be able to define a campaign, run/resume/cancel work, inspect results, and create reproducible reports.
 
-MCP será una superficie de control sobre operaciones tipadas. El producto principal es el ciclo portable de experimentación, no el servidor MCP aislado.
+MCP is a typed control surface over the product operations. The product is the portable experiment workflow, not the MCP server by itself.
 
-## Criterios de éxito del proyecto
+## Success criteria
 
-1. El núcleo se instala y opera sin ROS, Gazebo ni EasyNav.
-2. Los datos de ejecución usan contratos versionados, con unidades, procedencia, estado de validez y motivo de ausencia.
-3. Una misma especificación de campaña puede ejecutarse en al menos dos backends diferentes.
-4. Una campaña se puede reanudar sin repetir resultados ya completos ni confundir fallo del sistema con fallo de infraestructura.
-5. La salida JSON es canónica; Markdown y HTML se renderizan desde ese contrato y concuerdan.
-6. El análisis declara población, exclusiones, n por grupo, semillas, método, intervalo de confianza y limitaciones.
-7. Un agente MCP solo accede a acciones autorizadas por la política del espacio de trabajo.
-8. La portabilidad se demuestra con una prueba de migración documentada desde el caso piloto, no solo con una arquitectura dibujada.
+1. The core installs and runs without ROS or Gazebo.
+2. Run data uses versioned contracts with units, provenance, validity state, and a reason for missing data.
+3. The same campaign specification runs against at least two independent backends.
+4. A campaign resumes without repeating terminal runs or confusing system failure with infrastructure failure.
+5. JSON is canonical; Markdown and HTML reports render from that model and agree with it.
+6. Analysis states the population, exclusions, group sizes, seeds, method, confidence interval, and limitations.
+7. An MCP agent can only perform actions allowed by workspace policy.
+8. Portability is demonstrated by a documented integration exercise, not architecture alone.
 
-## Líneas de trabajo
+## Workstreams
 
-| Línea | Trabajo | Resultado verificable |
+| Workstream | Work | Verifiable result |
 |---|---|---|
-| A. Descubrimiento y posición | Inventariar producto/código/papers; mapear capacidades y diferencias | Matriz de campo actualizada y afirmación de contribución acotada |
-| B. Dominio y contratos | Definir campaña, escenario, prueba, corrida, evento, métrica, artefacto, procedencia | Esquemas versionados y documentación de compatibilidad |
-| C. Adaptadores | Separar ejecución, simulador, sistema bajo prueba, adquisición de datos y escenarios | Adapter RAT/EasyNav inicial y un backend independiente |
-| D. Evaluación | Definiciones versionadas de métricas, agregación, reglas, datos faltantes y estadísticas | Módulos puros y ficha reproducible por métrica |
-| E. Campañas y optimización | Planificación declarativa, semillas, concurrencia, límites, reintentos, idempotencia, búsqueda | Runner reanudable y estrategias intercambiables |
-| F. MCP y operación | Recursos legibles, herramientas acotadas, estado de campaña, límites y cancelación | Servidor MCP delgado sobre la API de aplicación |
-| G. Informes | Contrato de análisis canónico; renderizadores Markdown/HTML y exportación de datos | Informe autogenerado con detalle, gráficos, advertencias y anexos |
-| H. Validación | Repetir piloto, introducir fallos controlados, medir coste y reproducibilidad | Informe de validación y decisiones de release |
+| A. Discovery and positioning | Review existing products, code, and research; map capabilities and gaps | Current landscape matrix and scoped contribution claim |
+| B. Domain and contracts | Define campaigns, scenarios, runs, events, metrics, artifacts, and provenance | Versioned schemas and compatibility documentation |
+| C. Adapters | Separate execution, simulator, system under test, data acquisition, and scenarios | Reference adapter plus an independent backend |
+| D. Evaluation | Version metrics, aggregation, criteria, missing-data handling, and statistics | Reproducible metric definitions and pure analysis modules |
+| E. Campaigns and optimization | Declarative planning, seeds, concurrency, limits, retries, idempotence, and search | Resumable runner and interchangeable strategies |
+| F. MCP and operations | Bounded tools, campaign state, quotas, and cancellation | Thin MCP server over the application API |
+| G. Reports | Canonical analysis contract and Markdown/HTML renderers | Generated report with details, warnings, and appendices |
+| H. Validation | Repeat representative workloads, inject failures, measure cost and reproducibility | Validation evidence and release decisions |
 
-## Fases
+## Phases
 
-### 0. Base de producto (actual)
+### 0. Product foundation — implemented
 
-- Crear repositorio independiente.
-- Documentar investigación, auditoría, métricas y diseño de evaluación.
-- Definir contratos Python sin dependencias ROS.
-- Acordar el nombre, licencia y política de distribución antes de publicarlo.
+- Create an independent repository.
+- Document the architecture, metric model, and evaluation approach.
+- Define Python contracts without ROS dependencies.
+- Select a permissive license and public contribution policy.
 
-### 1. Núcleo ejecutable
+### 1. Executable core — implemented
 
-- Validador de manifiestos declarativos.
-- Planificador de matriz escenario × configuración × semilla.
-- Máquina de estados de campaña y corrida con persistencia append-only.
-- Interfaz de adapter para ejecución, datos y reset; almacenamiento local inicial.
-- CLI para inspeccionar y operar una campaña sin un LLM.
-- Pruebas de contrato en adapters simulados. Esta fase no se considerará lista hasta verificar el código y los casos de fallo.
+- Validate declarative manifests.
+- Plan scenario × configuration × seed matrices.
+- Persist campaign and run state with append-only events.
+- Provide an adapter interface and local artifact storage.
+- Support campaign inspection and operation without an LLM.
+- Cover failure cases with contract and runtime tests.
 
-### 2. Adapter de referencia
+### 2. Reference adapter — demonstration implemented
 
-- Portar una trayectoria vertical: preparar entorno, iniciar la simulación, ejecutar un objetivo, recoger métricas/artefactos y apagar limpiamente.
-- Extraer la primera capa de datos RAT/EasyNav de ROS/Gazebo.
-- Comparar corrida por corrida con TFM_Rover; registrar cualquier diferencia antes de declarar equivalencia.
-- Mantener desactivada la ejecución en hardware real.
+- Prepare an environment, start a simulator, execute a goal, collect metrics/artifacts, and shut down cleanly.
+- Provide a pinned Nav2/TurtleBot3 Docker demonstration.
+- Keep real-hardware execution disabled by default.
+- Add a second adapter before claiming demonstrated portability.
 
-### 3. Métricas y reportes
+### 3. Metrics and reports — core implemented, domain coverage incomplete
 
-- Reubicar métricas puras donde no importen ROS.
-- Versionar definiciones y declararlas en un catálogo.
-- Crear análisis por grupo, escenario, semilla y configuración.
-- Generar JSON, Markdown y HTML a partir de una única estructura de resultados.
-- Probar casos con telemetría faltante, ejecución interrumpida e infraestructura fallida.
+- Keep metric calculations independent of ROS where possible.
+- Version metric definitions and expose a catalogue.
+- Analyze by group, scenario, seed, and configuration.
+- Generate JSON, Markdown, and HTML from one result model.
+- Test missing telemetry, interrupted runs, and infrastructure failures.
+- Add contact, ground-truth, footprint-clearance, and resource instrumentation where the backend supports it.
 
-### 4. MCP
+### 4. MCP — initial local server implemented
 
-- Añadir herramientas de consulta, validación, ejecución, estado, análisis, informe y cancelación.
-- Separar lectura y escritura; operaciones que consumen recursos quedan limitadas por presupuesto y política.
-- No exponer shell arbitraria ni destinos de hardware como valores por defecto.
-- Registrar quién solicitó cada acción, manifiesto efectivo y resultado.
+- Provide query, validation, execution, status, analysis, report, and cancellation tools.
+- Separate reads from writes and bound resource-consuming operations by policy.
+- Do not expose arbitrary shell or real-hardware targets by default.
+- Record the effective manifest and result for every operation.
 
-### 5. Portabilidad y escalado
+### 5. Portability and scale — in progress
 
-- Añadir segundo backend en otra plataforma o dominio.
-- Probar workers locales y remotos, capacidad y cuotas.
-- Mantener opción de base local; almacenamiento y colas remotas son plugins, no requisito del núcleo.
-- Usar LHS como screening reproducible y TPE/Optuna como optimizador opcional con restricciones y objetivos explícitos. El acoplamiento con ejecuciones se valida al implementar el runner.
-- Documentar coste, paralelismo, recuperación y reproducibilidad.
+- Add an independent backend on another platform or domain.
+- Measure worker capacity, concurrency, and quotas.
+- Keep local storage as a supported option; remote queues and object storage should remain optional integrations.
+- Use LHS for reproducible screening and optional TPE/Optuna for adaptive search with explicit objectives and constraints.
+- Document cost, parallelism, recovery, and reproducibility.
 
-### 6. Evaluación de contribución y distribución
+### 6. Validation and distribution — in progress
 
-- Repetir y comparar contra herramientas existentes en los casos que cubren.
-- Medir facilidad de adaptación, esfuerzo de integración, reproducibilidad, cobertura y carga del operador.
-- Publicar benchmark, especificaciones, datos de ejemplo y limitaciones.
-- Revisar licencias de los repositorios y dependencias antes de incorporar código.
+- Compare methods under the same evaluation budget where relevant.
+- Measure adaptation effort, integration effort, reproducibility, coverage, and operator burden.
+- Publish reproducible examples and limitations.
+- Review licenses of dependencies, container images, and data before adding distributed assets.
 
-## Riesgos que influyen en el plan
+## Risks that shape the plan
 
-- “Genérico” puede terminar siendo solo una capa de configuración sobre un único simulador; por eso el segundo backend es un criterio de éxito.
-- El inventario de métricas es específico de navegación móvil. El núcleo debe tolerar perfiles de dominio distintos, sin imponer navegación.
-- La verdad de terreno, el concepto de éxito y la instrumentación varían por caso; deben declararse mediante plugins/contratos.
-- La concurrencia de campañas puede degradar la simulación y sesgar duración y temporización. El runner debe vigilar fidelidad/recursos y registrar cuándo descarta una corrida.
-- Los resultados que sobreviven a éxito pueden sesgar las métricas de tiempo y calidad. Informes separan la probabilidad de éxito de métricas condicionadas al éxito.
-- Una LLM puede proponer una evaluación defectuosa. Las métricas y límites críticos deben ser revisables y versionados fuera del modelo.
-- Hay un hueco entre las infografías HTML manuales y el analizador reproducible actual; un informe bonito no debe ocultar el denominador ni las exclusiones.
+- “Generic” can become a configuration layer for one simulator; the independent backend is therefore a success criterion.
+- The current metric inventory is strongest for mobile navigation. The core must allow domain-specific profiles without imposing navigation on every system.
+- Ground truth, mission success, and instrumentation differ by use case; declare them through plugins and contracts.
+- Concurrent campaigns can degrade simulation fidelity and bias timing. Monitor resources and record excluded runs.
+- Metrics conditioned on successful runs can introduce survivor bias. Reports must show success rate alongside those metrics.
+- An LLM can propose a defective evaluation. Critical metrics and limits must be reviewable and versioned outside the model.
+- Reports must keep denominators and exclusions visible; presentation must not obscure the underlying evidence.

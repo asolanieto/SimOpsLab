@@ -1,10 +1,10 @@
-# Crear un backend para tu robot o simulador
+# Add a backend for your robot or simulator
 
-SimOps separa el motor de campañas del acceso al simulador. Cada backend implementa cuatro piezas: identidad versionada, validación previa, ejecución aislada de una corrida y `RunResult` con métricas tipadas y artefactos. No se requiere ROS.
+SimOps separates campaign orchestration from simulator access. Each backend provides a versioned identity, preflight validation, isolated execution of one run, and a `RunResult` with typed metrics and artifacts. ROS is not required.
 
-## Interfaz mínima
+## Minimal interface
 
-Implementa `ExperimentBackend` de `simops.backends`:
+Implement `ExperimentBackend` from `simops.backends`:
 
 ```python
 class MyBackend:
@@ -19,20 +19,20 @@ class MyBackend:
         ...
 ```
 
-`RunSpec` incluye configuración, escenario, repetición y semilla solicitada. `ExecutionContext` ofrece un workspace por intento, almacenamiento de artefactos, deadline y cancelación cooperativa. Si tu simulador no acepta la semilla, decláralo en `provenance`; no informes reproducibilidad como si se hubiera aplicado.
+`RunSpec` contains configuration, scenario, repetition, and requested seed. `ExecutionContext` provides a per-attempt workspace, artifact storage, deadline, and cooperative cancellation. If your simulator does not accept the seed, record that in `provenance`; do not claim it was applied.
 
-## Instrumentación que hace útil el afinado
+## Instrumentation that makes tuning useful
 
-1. Separa outcome funcional de fallo de infraestructura.
-2. Para cada métrica, emite ID estable, definición versionada, unidad, estado (`observed`, `missing`, `invalid` o `not_applicable`), fuente, cobertura y razón.
-3. Conserva señales de referencia independientes cuando midas error de localización o seguimiento.
-4. Cuenta contactos desde el simulador para evaluar colisión; un rayo lidar corto no los reemplaza. Calcula holgura de la huella con geometría sincronizada.
-5. Conserva tiempo de pared y simulado por separado, y reporta cobertura/reloj.
-6. Copia configuración efectiva y versiones/digest del robot, mapa, plugin y simulador a `provenance`; archiva rosbag/MCAP/trazas bajo hash.
-7. Declara `thread_safe=False` si dos procesos podrían compartir el mismo mundo, puerto, GPU o configuración.
+1. Separate functional outcome from infrastructure failure.
+2. For each metric, emit a stable ID, versioned definition, unit, state (`observed`, `missing`, `invalid`, or `not_applicable`), source, coverage, and reason.
+3. Keep independent reference signals when measuring localization or tracking error.
+4. Count contacts from simulator contact data when evaluating collision; a short lidar ray is not a substitute. Compute footprint clearance from synchronized geometry.
+5. Keep wall and simulation time separate; report clock and signal coverage.
+6. Record effective configuration and robot/map/plugin/simulator versions or digests in `provenance`; archive rosbags, MCAP, and traces by content hash.
+7. Set `thread_safe=False` if processes share a world, port, GPU, or configuration.
 
-El afinado invalida candidatos con métricas requeridas ausentes. Sus restricciones son de peor caso entre corridas, salvo que el manifiesto declare otro estimador. La selección final requiere escenarios y semillas hold-out.
+Tuning invalidates candidates with missing required metrics. Constraints use worst-case aggregation across runs unless the manifest declares another estimator. Final selection needs held-out scenarios and seeds.
 
-Registra el backend como entry point Python `simops.backends`; ve `pyproject.toml` para el ejemplo Nav2. MCP no expone shell: el servidor invoca únicamente backends permitidos y manifiestos dentro del workspace autorizado.
+Register the backend with the Python `simops.backends` entry point; see `pyproject.toml` for the Nav2 example. MCP exposes no shell: the server invokes only allowed backends and manifests from its authorized workspace.
 
-Los perfiles de robot documentan límites y sensores, pero no inventan una implementación. Conecta sus valores a parámetros efectivos del backend y valida los parámetros de tuning contra la envolvente del robot.
+Robot profiles document limits and sensors but do not implement them. Map profile values to effective simulator parameters and validate tuning ranges against the robot envelope.

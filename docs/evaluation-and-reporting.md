@@ -1,105 +1,103 @@
-# Diseño de evaluación y generación de informes
+# Evaluation and reporting design
 
-## Principios
+## Principles
 
-1. **Resultado canónico**: cada corrida produce un registro estructurado versionado. El informe no calcula una segunda versión de las métricas a escondidas.
-2. **Separar sistema e infraestructura**: una navegación que no llega es fallo del sistema; simulador caído, adapter sin respuesta, datos corruptos o presupuesto agotado son fallo operativo/infraestructura.
-3. **Desconocido no es cero**: toda métrica guarda estado (`observed`, `not_applicable`, `missing`, `invalid`) y motivo.
-4. **Referencia declarada**: ground truth, sensor externo, estimación propia o referencia analítica se identifican por corrida. Se prohíbe presentar el error contra la misma señal evaluada como error independiente.
-5. **No ocultar población**: presentar intentos planificados, completos, válidos, excluidos y motivo; el denominador aparece junto a cada proporción.
-6. **Separar exploración y confirmación**: parámetros se seleccionan en escenarios/semillas de ajuste y se confirman en hold-out fijado antes de ver resultados.
-7. **Preservar crudos**: guardar logs y señales con retención configurada. Los agregados no sustituyen el dato de origen.
+1. **Canonical result:** each run produces a versioned structured record. A report must not silently calculate a second version of a metric.
+2. **Separate system and infrastructure:** a navigation system that fails to reach a goal is a system failure; a crashed simulator, unresponsive adapter, corrupt data, or exhausted infrastructure budget is an operational failure.
+3. **Unknown is not zero:** each metric carries a state (`observed`, `not_applicable`, `missing`, or `invalid`) and a reason.
+4. **Declare the reference:** identify ground truth, external sensor, self-estimate, or analytical reference per run. Never present error against the evaluated signal itself as an independent error measure.
+5. **Expose the population:** show planned, completed, valid, and excluded attempts with reasons. Put denominators next to every proportion.
+6. **Separate exploration and confirmation:** select parameters on tuning scenarios/seeds and confirm on holdout fixed before examining results.
+7. **Preserve raw data:** store logs and signals under a configured retention policy. Aggregates do not replace source data.
 
-## Ciclo de datos
+## Data flow
 
-`Campaña declarativa → corridas planificadas → adapter ejecuta → artefactos y telemetría → plugins calculan métricas → validador calcula estados/exclusiones → analizador compara grupos → JSON canónico → renderizadores Markdown/HTML`
+`Declarative campaign → planned runs → adapter execution → artifacts/telemetry → metric plugins → validation/exclusions → group analysis → canonical JSON → Markdown/HTML renderers`
 
-Cada registro contiene como mínimo:
+Every record should contain at least:
 
-- Identificadores de campaña, corrida, escenario, sistema, configuración y repetición.
-- Estado operativo de corrida y resultado funcional del sistema, en campos independientes.
-- Seed, variables del escenario, valores solicitados y efectivos, versiones de código/simulador/adapter/metric plugin.
-- Huellas de contenedor/paquete, host y recursos relevantes, commit o estado sucio cuando se conozca.
-- Relojes, referencia, política de sincronización y criterio de éxito.
-- Métricas con unidad, versión, estado, motivo de ausencia y cobertura.
-- Artefactos con ruta/URI, mime type, tamaño, checksum y esquema.
-- Intentos, reintentos, interrupciones, avisos y eventos de ejecución.
+- Campaign, run, scenario, system, configuration, and repetition IDs.
+- Operational run state and functional system outcome as separate fields.
+- Seed, scenario variables, requested/effective values, and code/simulator/adapter/metric-plugin versions.
+- Container/package digests, host and relevant resources, commit or dirty-tree state when known.
+- Clocks, reference signal, synchronization policy, and success criterion.
+- Metrics with unit, definition version, state, missing reason, and coverage.
+- Artifacts with path/URI, MIME type, size, checksum, and schema.
+- Attempts, retries, interruptions, warnings, and execution events.
 
-## Protocolo estadístico
+## Statistical protocol
 
-### Descripción por grupo
+### Group summaries
 
-- Para proporciones de llegada, colisión, cancelación, violación de criterio y fallos: mostrar (k/n), intervalo de confianza del 95% (Wilson por defecto para proporciones pequeñas/moderadas) y número excluido con motivo.
-- Para continuas: mostrar (n), mediana, Q1, Q3, media/desviación solo cuando se necesiten; percentiles 5/95 para colas si están predefinidos.
-- Tiempo de llegada y eficiencia condicionados a llegar se marcan explícitamente como “entre éxitos”. Al lado mostrar tasa de éxito para reducir sesgo de superviviente.
-- Para seguridad: mostrar eventos por corrida y por unidad de exposición (tiempo/distancia) cuando el dominio lo permita; una tasa media no sustituye el conteo de severidad.
-- Informar datos inválidos, telemetría ausente, cola truncada y calidad de medición.
+- For success, collision, cancellation, criterion violation, and failure proportions, show `(k/n)`, a 95% interval (Wilson by default for small/moderate samples), and excluded counts/reasons.
+- For continuous values, show `n`, median, Q1, Q3, and mean/standard deviation only when useful. Predeclare tail percentiles such as p5/p95.
+- Mark time/efficiency conditioned on success as “among successful runs” and show success rate alongside it to reduce survivor bias.
+- For safety, show event counts per run and per exposure unit (time/distance) when appropriate. A mean rate does not replace severity counts.
+- Report invalid data, missing telemetry, truncated tails, and measurement quality.
 
-### Comparación de configuraciones
+### Configuration comparisons
 
-- Comparar primero resultados primarios definidos a priori; evitar convertir todo en una sola nota.
-- Si escenarios y semillas están emparejados, calcular diferencias pareadas. Si hay bloqueo por escenario, conservar el emparejamiento y reportar intervalo del efecto pareado; no tratar toda corrida como iid.
-- Bootstrap con semilla explícita es una opción para intervalos de diferencia; remuestrear la unidad experimental correcta (escenario/semilla), no mensajes.
-- Para múltiples métricas o configuraciones, declarar corrección de multiplicidad o marcar comparación como exploratoria.
-- Dar diferencia absoluta, efecto relativo si aplica, IC 95%, n por lado, unidad y criterio de “diferencia relevante”.
-- Bajo n, mostrar “evidencia insuficiente” en vez de “igual”; el umbral no debe esconder la amplitud del intervalo.
-- Tratar condiciones duras de seguridad como restricciones, no compensarlas con tiempo o eficiencia en un coste medio.
-- El óptimo seleccionado debe repetirse en un conjunto de validación distinto; la elección de métricas, umbrales y pesos se versiona.
+- Compare preregistered primary outcomes first; avoid combining everything into one score.
+- When scenarios/seeds are paired, preserve pairing and report paired effect intervals. Do not treat scenario-blocked runs as iid.
+- Bootstrap with an explicit seed is an option for difference intervals. Resample the experimental unit (scenario/seed), not telemetry messages.
+- For multiple metrics/configurations, declare multiplicity handling or label comparisons exploratory.
+- Report absolute difference, relative effect when meaningful, 95% interval, `n` per side, unit, and a minimally relevant difference criterion.
+- With small `n`, report insufficient evidence rather than equality; do not let thresholds conceal interval width.
+- Keep hard safety conditions as constraints; do not compensate for them with time or efficiency in an average cost.
+- Rerun selected candidates on separate validation data. Version metric choices, thresholds, and weights.
 
-### Infraestructura y exclusiones
+### Infrastructure and exclusions
 
-- Reintentos de infraestructura tienen registros propios; conservar intento original y motivo.
-- No borrar fallos de infraestructura del informe: excluir del denominador funcional, reportar su número y tasa aparte.
-- Fallo del stack/SUT con simulador sano sí pertenece al resultado funcional.
-- Si los sensores/telemetría crítica faltan, el criterio queda desconocido, no aprobado.
-- Marcar ejecuciones con RTF degradado, tiempo sim inconsistente, condiciones externas o corte de sesión; política de incluir/excluir debe fijarse por protocolo.
-- Cancelar no equivale a fallo: representar cancelación esperada y seguridad de parada por separado.
+- Preserve infrastructure retries and original attempt reason.
+- Do not erase infrastructure failures. Exclude them from functional denominators but report their number/rate separately.
+- A system-under-test failure with a healthy simulator belongs in the functional result.
+- If critical sensors/telemetry are missing, the criterion is unknown, not passed.
+- Mark degraded real-time factor, inconsistent simulation clock, external conditions, and interrupted sessions. Fix inclusion/exclusion policy before the run.
+- Cancellation is not failure; represent expected cancellation and stop safety separately.
 
-## Estructura recomendada del informe
+## Recommended report structure
 
-### 1. Portada/alcance
+### 1. Scope
 
-Nombre del experimento, fecha, objetivo, sistema/backends, commit/versiones, autor/política de ejecución, criterios primarios y alcance del conjunto de datos.
+Experiment name/date, objective, system/backend, versions/commit, execution policy, primary criteria, and dataset scope.
 
-### 2. Resumen ejecutivo
+### 2. Executive summary
 
-- Corridas planificadas/completadas/excluidas y por qué.
-- Éxito funcional y seguridad con (k/n) e IC.
-- Diferencias primarias, efecto e IC.
-- Recomendación condicionada por operación.
-- Dos o tres hallazgos, incertidumbres y limitaciones.
+- Planned/completed/excluded runs and reasons.
+- Functional success and safety with `(k/n)` and intervals.
+- Primary effects and intervals.
+- Conditional operational recommendation.
+- Key findings, uncertainty, and limitations.
 
-### 3. Configuración y reproducibilidad
+### 3. Configuration and reproducibility
 
-Matriz de factores y escenarios, rangos, semillas, orden aleatorio, parámetros efectivos, software, hardware, versiones y hashes de artefactos.
+Factor/scenario matrix, ranges, seeds, randomization order, effective parameters, software/hardware versions, and artifact hashes.
 
-### 4. Protocolo y validez
+### 4. Protocol and validity
 
-Criterio de éxito, señal de referencia, métricas pre-registradas, unidad experimental, análisis planeado y tratamiento de fallos/faltantes.
+Success criterion, reference signal, preregistered metrics, experimental unit, analysis plan, and failure/missing-data policy.
 
-### 5. Resultados
+### 5. Results
 
-- Tabla por configuración/escenario.
-- Llegada y seguridad primero.
-- Tiempo/eficiencia condicionados a éxitos.
-- Localización, control/suavidad, fiabilidad del stack y recursos.
-- Matriz de escenarios, distribución y calidad de datos.
-- Trazas representativas con selección explicada, no solo las “más bonitas”.
+- Table by configuration/scenario.
+- Mission success and safety first.
+- Time/efficiency conditioned on success.
+- Localization, control/smoothness, stack reliability, and resources.
+- Scenario matrix, distributions, and data quality.
+- Representative traces with an explained selection method.
 
-### 6. Diagnósticos y artefactos
+### 6. Diagnostics and artifacts
 
-Eventos destacados, causas observables, trazas/bags/logs, corridas omitidas y enlaces locales/exportables.
+Notable events, observable causes, traces/bags/logs, omitted runs, and local/exportable links.
 
-### 7. Conclusiones y límites
+### 7. Conclusions and limitations
 
-Afirmaciones limitadas a condiciones probadas; siguiente experimento recomendado y motivos.
+Limit claims to tested conditions; state the next experiment and why.
 
-### 8. Apéndices
+### 8. Appendices
 
-Manifiesto, catálogo/versión de métricas, fórmulas, estadística, diccionario del esquema, archivos fuente y dependencias.
+Manifest, metric catalogue/version, formulas, statistics, schema dictionary, source files, and dependencies.
 
-## Infografías
+## Visualizations
 
-Se pueden generar visualizaciones HTML interactivas, pero cada panel debe mostrar n, denominador, intervalo, unidad, filtro y leyenda. La tabla accesible y el archivo JSON deben poder responder la misma pregunta. PDF se deja como renderizador posterior, no como formato de datos.
-
-Los tres HTML actuales tienen contenido valioso, pero el código común observado genera JSON/Markdown corto y gráficas individuales, no estos informes de campaña. La nueva plataforma deberá recrear una campaña histórica desde sus datos y producir una página comparable sin editar números a mano.
+Interactive HTML visualizations are useful, but each panel should show `n`, denominator, interval, unit, filters, and legend. Accessible tables and JSON should answer the same question. PDF is a later renderer, not a data format.

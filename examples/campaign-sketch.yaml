@@ -1,9 +1,9 @@
-# Esquema ilustrativo; todavía no es ejecutable.
-# Debe evolucionar hacia un JSON Schema versionado antes del MVP.
+# Illustrative sketch; not executable by SimOps.
+# This draft should evolve into a versioned JSON Schema before an MVP release.
 schema_version: "0.1.0"
 campaign:
   id: "example-navigation-robustness"
-  title: "Comparación de controladores"
+  title: "Controller comparison"
   backend:
     adapter: "example.simulator"
     version: "pinned-by-workspace"

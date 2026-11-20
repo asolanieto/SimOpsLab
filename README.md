@@ -1,49 +1,49 @@
 # SimOps Lab
 
-**Convierte una simulación ejecutable en un ciclo reproducible de evaluación y ajuste.** SimOps Lab organiza campañas, aplica criterios por corrida, busca configuraciones candidatas y conserva la evidencia que permite explicar por qué una configuración pasa o falla. Un agente puede operar el flujo mediante MCP local, mientras la ejecución y los cálculos siguen siendo reproducibles fuera del LLM.
+**Turn an executable simulation into a reproducible evaluation and tuning loop.** SimOps Lab plans campaigns, runs experiments, applies per-run constraints, searches candidate configurations, and keeps the evidence needed to explain why a configuration passed or failed. An AI agent can operate the workflow through a local MCP server while execution and analysis remain reproducible outside the LLM.
 
-> Para robots móviles, el objetivo es ayudar a llevar un stack desde sus parámetros iniciales hasta una configuración validada para un robot, mapa y conjunto de escenarios definidos. SimOps no promete un óptimo matemático ni certifica seguridad: muestra qué se midió, bajo qué condiciones, qué restricciones se incumplieron y qué falta validar.
+> For mobile robots, SimOps helps take a navigation stack from its initial parameters to a configuration evaluated for a particular robot, map, and scenario set. It does not promise a mathematical optimum or certify safety. It makes the measurements, conditions, violated constraints, and remaining validation visible.
 
-## Qué puedes hacer
+## What you can do
 
-| Capacidad | Disponible en el núcleo | Estado del ejemplo Nav2/TurtleBot3 |
+| Capability | Core | Nav2/TurtleBot3 example |
 |---|---|---|
-| Definir campañas de robot × escenario × configuración × repetición × semilla | Manifiestos JSON y planner determinista | Ruta de navegación headless en Gazebo Sim |
-| Ejecutar, reintentar, cancelar y reanudar | Runner concurrente, deadline, journal SQLite WAL | Un contenedor aislado por corrida |
-| Preservar datos de forma verificable | Artefactos SHA-256, intentos, configuración, backend e imagen | Logs, override YAML y mediciones JSON |
-| Medir resultados funcionales y operación | Métricas versionadas; dato observado, faltante, inválido o no aplicable | Acción NavigateToPose, duración de pared y sim, odometría y láser |
-| Cuantificar control y ruta | Contrato genérico, resúmenes y cobertura por escenario | Eficiencia proxy, tasa de comandos, giros, saturación y aceleración angular RMS |
-| Afinar parámetros | LHS sin dependencias y TPE/Optuna opcional; objetivos múltiples y Pareto | Tuning conectado a ejecuciones reales; límites verificables por perfil de robot |
-| Evitar que una media esconda un fallo | Restricciones de peor caso por corrida por defecto | Restricciones de colisión, llegada y umbrales configurables |
-| Inspeccionar resultados | JSON canónico, Markdown y HTML con cuantiles, intervalos de éxito y datos faltantes | Informes locales por campaña |
-| Dejar que un agente opere el ciclo | MCP local por stdio, workspace acotado, allowlist y cuotas | Solo backend `demo` permitido por defecto |
-| Adaptar a otro robot o dominio | Backend Python instalable por entry point; perfil de capacidades | El ejemplo Nav2 es específico de TurtleBot3 y no representa un adapter universal |
+| Define robot × scenario × configuration × repetition × seed campaigns | JSON manifests and deterministic planner | Headless Gazebo Sim navigation route |
+| Run, retry, cancel, and resume work | Concurrent runner, deadline, SQLite WAL journal | One isolated container per run |
+| Preserve verifiable evidence | SHA-256 artifacts, attempts, configuration and backend provenance | Logs, YAML overrides, and structured measurements |
+| Measure mission outcomes and operations | Versioned metrics with observed, missing, invalid, and not-applicable states | NavigateToPose action, wall/simulation duration, odometry, and laser data |
+| Quantify route and control behavior | Generic metric contracts, summaries, and per-scenario coverage | Route-efficiency proxy, command rate, turns, saturation, and RMS angular acceleration |
+| Tune parameters | Dependency-free LHS and optional TPE/Optuna; multiple objectives and Pareto results | Tuning connected to real runs and robot-profile limits |
+| Keep averages from hiding failures | Worst-case constraints per run by default | Configurable success and speed constraints |
+| Inspect results | Canonical JSON plus Markdown/HTML, quantiles, success intervals, and missing-data reporting | Local campaign reports |
+| Let an agent operate the workflow | Local stdio MCP, workspace boundaries, allowlist, and quotas | `demo` is allowed by default; Docker must be enabled explicitly |
+| Adapt another robot or domain | Installable Python backend entry point and capability profiles | The bundled Nav2 route is TurtleBot3-specific, not a universal adapter |
 
-## Catálogo de evaluación
+## Evaluation catalogue
 
-El esquema no fuerza una puntuación única. Puedes definir métricas y criterios de misión para el problema, conservar faltantes como faltantes y comparar cada escenario/configuración antes de agregar resultados.
+The schema does not force every system into one score. Define the mission measures and acceptance criteria for your problem, retain missing values as missing, and inspect each scenario/configuration before aggregating results.
 
-- **Misión y navegación:** éxito, estado final, tiempo simulado/de pared, distancia, eficiencia, pose terminal, desviación y recuperaciones.
-- **Seguridad:** contactos y colisiones, distancia de la huella, near-misses, TTC, velocidad/impulso de impacto.
-- **Localización y sensores:** error XY/yaw con referencia independiente, deriva, frescura, pérdidas, jitter y latencia.
-- **Control y movimiento:** límites y saturación, oscilación, maniobras, aceleración, jerk, suavidad y parada posterior a la misión.
-- **Robustez:** distribución por escenario y semilla, peor caso, CVaR, sensibilidad, rendimiento fuera de muestra y hold-out.
-- **Sistema y reproducibilidad:** diagnósticos, caídas, ciclos, CPU/memoria/GPU, reloj, cobertura de datos, parámetros efectivos y hashes de artefactos.
+- **Mission and navigation:** success, terminal state, simulation/wall time, distance, route efficiency, final pose, deviation, and recoveries.
+- **Safety:** contacts, collisions, footprint distance, near misses, time-to-collision, impact speed, and impulse.
+- **Localization and sensors:** XY/yaw error against an independent reference, drift, freshness, dropouts, jitter, and latency.
+- **Control and motion:** limits and saturation, oscillation, maneuvers, acceleration, jerk, smoothness, and post-mission stopping.
+- **Robustness:** distributions across scenarios and seeds, worst cases, CVaR, sensitivity, out-of-sample performance, and holdout results.
+- **System and reproducibility:** diagnostics, crashes, CPU/memory/GPU, clocks, data coverage, effective parameters, and artifact hashes.
 
-El [catálogo de métricas](docs/metrics-catalog.md) distingue las medidas emitidas por el ejemplo Nav2 de las extensiones que requieren instrumentación nueva. En el demo Nav2 el láser mínimo **no** se presenta como distancia segura, la odometría **no** se presenta como referencia de verdad independiente y la ausencia de contactos **no** se cuenta como cero colisiones.
+The [metric catalogue](docs/metrics-catalog.md) distinguishes measures emitted by the Nav2 example from extensions that need additional instrumentation. In the demo, minimum laser range is **not** presented as safe clearance, odometry is **not** treated as independent ground truth, and missing contact data is **not** counted as zero collisions.
 
-## Afinado consciente del robot
+## Robot-aware tuning
 
-1. Declara geometría, límites cinemáticos y sensores en un [perfil de robot](examples/robot-profiles/turtlebot3-demo.json).
-2. Especifica parámetros permitidos, escenarios de screening, repeticiones, semillas y objetivos.
-3. Declara restricciones de seguridad por corrida. Por defecto se usa el peor caso para que una media no oculte un fallo aislado.
-4. Ejecuta LHS para cubrir el espacio; usa TPE si la búsqueda adaptativa resulta útil y puedes persistir el estudio.
-5. Inspecciona el frente de Pareto y la matriz escenario/configuración.
-6. Repite candidatos finalistas en escenarios/semillas reservados antes de afirmar mejora.
+1. Declare geometry, kinematic limits, and available sensors in a [robot profile](examples/robot-profiles/turtlebot3-demo.json).
+2. Specify tunable parameters, screening scenarios, repetitions, seeds, and objectives.
+3. Declare hard safety constraints per run. Worst-case aggregation is the default so that a favorable mean cannot hide an isolated failure.
+4. Use LHS to cover the parameter space; use TPE when adaptive search is useful and a persistent study is available.
+5. Inspect the Pareto front and scenario/configuration matrix.
+6. Repeat finalists on reserved scenarios or seeds before claiming an improvement.
 
-Las [reglas de afinado](docs/optimization-methods.md) y el [manual de usuario](docs/user-manual.md) incluyen ejemplos. Un perfil limita las cotas de `controller.vx_max` y `controller.wz_max`; el backend sigue siendo responsable de aplicar y leer de vuelta los valores efectivos.
+The [optimization guide](docs/optimization-methods.md) and [user manual](docs/user-manual.md) include examples. A robot profile bounds `controller.vx_max` and `controller.wz_max`; each backend remains responsible for applying parameters and reading back the effective values.
 
-## Empieza en minutos
+## Get started
 
 ```sh
 python -m pip install -e .
@@ -53,7 +53,7 @@ simops run examples/demo-campaign.json
 simops tune examples/demo-tuning.json
 ```
 
-`demo` es sintético y sirve para aprender el flujo. Para ejecutar la integración real de muestra se necesita Docker:
+`demo` is synthetic and teaches the workflow. To run the included real simulator integration, install Docker and build the image:
 
 ```sh
 docker build -f examples/nav2-turtlebot3/Dockerfile -t simops-lab/nav2-turtlebot3:lyrical-1.5.3-gm1.3.46 .
@@ -61,19 +61,18 @@ simops validate examples/nav2-turtlebot3/campaign.json
 simops run examples/nav2-turtlebot3/campaign.json
 ```
 
-Consulta el [manual](docs/user-manual.md) antes de configurar el experimento. Para MCP local instala `python -m pip install -e ".[mcp]"` y ejecuta `simops mcp --workspace ./workspace`; el servidor no tiene una herramienta de shell y por defecto solo permite el backend sintético. Instala TPE con `python -m pip install -e ".[optimize]"`.
+Read the [user manual](docs/user-manual.md) before configuring an experiment. To use MCP locally, install `python -m pip install -e ".[mcp]"` and run `simops mcp --workspace ./workspace`; the server has no shell tool and only allows the synthetic backend by default. Install TPE with `python -m pip install -e ".[optimize]"`.
 
-## Construye soporte para tu stack
+## Add support for your stack
 
-Crea un plugin con `validate()` y `execute()` que traduzca parámetros, inicie el simulador, recoja señales y emita `RunResult` con fuente, cobertura y límites conocidos. Regístralo bajo el entry point `simops.backends`. La guía [backend-authoring](docs/backend-authoring.md) describe instrumentación y aislamiento. SimOps no asume ROS, Gazebo ni una tarea de navegación en el núcleo.
+Implement a backend plugin with `validate()` and `execute()` methods to translate parameters, start the simulator, collect signals, and return `RunResult` with source, coverage, and known limitations. Register it under the `simops.backends` entry point. See the [backend authoring guide](docs/backend-authoring.md) for instrumentation and isolation. The core does not assume ROS, Gazebo, or a navigation task.
 
-## Estado del producto
+## Product status
 
-La infraestructura base, la búsqueda LHS/TPE y una integración de demostración Nav2 están implementadas y tienen pruebas de unidad y smoke tests. La demostración actual **no** implementa todavía la instrumentación de contactos Gazebo, referencia de pose independiente, holgura geométrica, error de localización, diagnóstico ROS ni telemetría de recursos. Por ello, aún no es un optimizador universal listo para cualquier robot.
+The core runtime, LHS/TPE search, and a Nav2 demonstration integration are implemented and covered by unit tests and smoke runs. The current demo does **not** yet include Gazebo contact instrumentation, an independent pose reference, footprint clearance, localization error, ROS diagnostics, or resource telemetry. SimOps is not a universal optimizer ready for every robot.
 
-Aún faltan validación con más stacks y escenarios, métricas de seguridad independientes, una segunda implementación de backend y revisión externa del manual. La integración incluida es una demostración reproducible, no una certificación de seguridad ni una garantía de rendimiento para otros robots. El repositorio se distribuye bajo [Apache License 2.0](LICENSE). Las campañas de ejemplo no incluyen datos de las pruebas locales.
+More stacks and scenarios, independent safety measurements, a second backend implementation, and external review of the manual remain open work. The included integration is a reproducible demonstration, not a safety certification or performance guarantee for other robots. The repository is distributed under the [Apache License 2.0](LICENSE). Example campaigns contain no local test data.
 
+## Community and contributions
 
-## Comunidad y contribuciones
-
-Consulta el [changelog](CHANGELOG.md) y lee [CONTRIBUTING.md](CONTRIBUTING.md) antes de proponer cambios. Para fallos de seguridad consulta [SECURITY.md](SECURITY.md); para preguntas y errores usa las plantillas de GitHub.
+Read the [changelog](CHANGELOG.md) and [contribution guide](CONTRIBUTING.md) before proposing changes. Report security issues using [SECURITY.md](SECURITY.md); use the GitHub templates for questions and bugs.

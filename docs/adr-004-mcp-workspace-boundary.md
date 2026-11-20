@@ -1,20 +1,20 @@
-# ADR-004 — MCP local con límites por workspace
+# ADR-004 — Local MCP with workspace boundaries
 
-- Estado: aceptada para la primera integración MCP.
-- Fecha: 2026-11-19.
+- Status: accepted for the first MCP integration.
+- Date: 2026-11-19.
 
-## Decisión
+## Decision
 
-- Exponer MCP por `stdio` y montar las mismas operaciones de aplicación que usa el CLI.
-- El operador inicia el servidor con un workspace local y una lista de backends permitidos. Por defecto solo está permitido `demo`.
-- El LLM identifica manifiestos por nombre de archivo dentro de `<workspace>/manifests`; no recibe herramientas para leer/escribir rutas arbitrarias ni para ejecutar comandos shell.
-- Limitar tamaño de campaña, concurrencia, presupuesto por corrida y total de corridas en afinado.
-- Ejecutar campañas y afinados en una tarea de fondo, con herramientas explícitas de estado/cancelación cooperativa.
-- No ofrecer destino de hardware real por defecto. Para habilitar un adapter real el operador debe instalarlo y permitirlo en la línea de inicio del MCP.
+- Expose MCP over `stdio` and reuse the same application operations as the CLI.
+- The operator starts the server with a local workspace and an explicit backend allowlist. Only `demo` is allowed by default.
+- The LLM identifies manifests by filename under `<workspace>/manifests`; it gets no arbitrary file read/write or shell tools.
+- Bound campaign size, concurrency, per-run budgets, and total tuning runs.
+- Run campaigns and tuning jobs in the background, with explicit status and cooperative cancellation tools.
+- Do not offer a real-hardware target by default. The operator must install and explicitly allow any real adapter.
 
-## Consecuencias y límites
+## Consequences and limits
 
-- El transporte inicial es local; no se configura endpoint HTTP ni autenticación remota.
-- Los límites del servidor MCP son una barrera adicional. No sustituyen aislamiento de proceso, cuotas del host ni revisión del plugin de backend que el operador decide instalar.
-- La cancelación de una corrida activa solo funciona si el adapter consulta el contexto y termina con limpieza.
-- El servidor expone operaciones tipadas de planificación y campaña; nunca una tool genérica de shell.
+- The initial transport is local; there is no HTTP endpoint or remote authentication.
+- MCP limits are an additional guardrail, not a replacement for process isolation, host quotas, or review of installed backend plugins.
+- Active-run cancellation works only when the adapter checks the context and cleans up.
+- The server exposes typed planning and campaign operations, never a generic shell tool.

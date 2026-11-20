@@ -1,26 +1,24 @@
-# Instrucciones para agentes
+# Agent instructions
 
-Este repositorio contiene el nuevo producto derivado del análisis de TFM_Rover.
+## Before making changes
 
-## Al comenzar
+1. Read `README.md`, `PLAN.md`, and the relevant pages in `docs/`.
+2. Separate verified measurements from inferences and design hypotheses.
+3. Confirm source data and methods before reusing any reported result.
 
-1. Lee `README.md`, `PLAN.md` y las páginas relevantes de `docs/`.
-2. Trata `docs/audit-existing-system.md` como una auditoría estática del estado observado el 19-11-2026; confirma las cifras y las fuentes antes de usarlas en una publicación.
-3. Mantén separadas las mediciones verificadas, las inferencias y las hipótesis de diseño.
+## Product boundaries
 
-## Límites del producto
+- The core must remain independent of ROS, Gazebo, Nav2, and MCP.
+- Simulator- and robot-specific behavior belongs in adapters and capability profiles.
+- Do not claim universal portability until the same contract has been exercised with multiple independent backends.
+- Missing or invalid data must never be represented as zero or success.
+- Preserve provenance, version, unit, validity, and coverage for every measurement.
+- Generate reports from structured data; do not hand-edit measured values into a report.
 
-- El núcleo no importa ROS, Gazebo, EasyNav, Nav2 ni el protocolo MCP.
-- Las particularidades del RAT viven en adaptadores y perfiles de dominio.
-- No presentes compatibilidad genérica hasta haber ejecutado el mismo contrato con dos backends distintos.
-- Un dato ausente o inválido no se representa como cero ni como éxito.
-- Conserva procedencia, versión y unidad para cada resultado.
-- Las infografías históricas se usan como referencia visual; el nuevo informe debe regenerarse desde datos estructurados.
+## Changes and coordination
 
-## Cambios y coordinación
-
-- No edites TFM_Rover como parte del desarrollo de este repo; úsalo como fuente de lectura y mantén sus modificaciones locales intactas.
-- No añadas secretos, rutas locales absolutas, credenciales ni claves SSH.
-- Las decisiones de arquitectura se registran en ADRs de este repositorio.
-- No configures ni publiques un remoto sin petición expresa del usuario.
-- El nombre SimOps Lab, el esquema v0.1 y las interfaces iniciales son provisionales hasta que se validen con el adapter piloto.
+- Keep development logs, private robot data, credentials, local workspaces, and generated simulation artifacts out of the public repository.
+- Do not edit other projects as part of work on this repository.
+- Do not add secrets, absolute local paths, SSH credentials, or private maps.
+- Record architectural decisions in an ADR.
+- The project name, schema version, and initial interfaces may evolve as adapters are validated.
