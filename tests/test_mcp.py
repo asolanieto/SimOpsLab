@@ -54,6 +54,14 @@ class MCPServerTests(unittest.IsolatedAsyncioTestCase):
                         break
                     await asyncio.sleep(0.02)
                 self.assertEqual(status.structured_content["status"], "completed")
+                result = await client.call_tool(
+                    "get_campaign_result", {"campaign_id": "demo-navigation-smoke"}
+                )
+                self.assertEqual(result.structured_content["campaign"]["planned_runs"], 8)
+                self.assertEqual(len(result.structured_content["groups"]), 4)
+                self.assertIn(
+                    "task.success@1", result.structured_content["groups"][0]["metrics"]
+                )
                 report = await client.call_tool(
                     "render_report", {"campaign_id": "demo-navigation-smoke"}
                 )

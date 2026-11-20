@@ -156,21 +156,25 @@ class MCPController:
         }
 
     def render_report(self, campaign_id: str) -> dict[str, Any]:
+        model = self.campaign_result(campaign_id)
+        campaign = model["campaign"]
+        paths = write_report(model, self.report_root / path_component(campaign_id))
+        return {
+            "campaign_id": campaign["campaign_id"],
+            "files": [str(path.relative_to(self.workspace)) for path in paths],
+        }
+
+    def campaign_result(self, campaign_id: str) -> dict[str, Any]:
         store = SQLiteCampaignStore(self.store_path)
         campaign = store.get_campaign(campaign_id)
         if campaign is None:
             raise ValueError(f"campaign {campaign_id!r} is unknown in this workspace")
-        model = analyze_campaign(
+        return analyze_campaign(
             campaign["campaign"],
             store.results(campaign_id),
             backend_id=campaign["backend_id"],
             backend_version=campaign["backend_version"],
         )
-        paths = write_report(model, self.report_root / path_component(campaign_id))
-        return {
-            "campaign_id": campaign_id,
-            "files": [str(path.relative_to(self.workspace)) for path in paths],
-        }
 
     def validate_tuning(self, manifest_name: str) -> dict[str, Any]:
         manifest = load_tuning_manifest(self.manifest_path(manifest_name), profile_root=self.workspace)
@@ -371,6 +375,11 @@ def create_mcp_server(workspace: str | Path, allowed_backends: set[str] | None =
     async def get_campaign_status(campaign_id: str) -> dict[str, Any]:
         """Read current run states and recent campaign activity."""
         return await invoke(lambda: controller.campaign_status(campaign_id))
+
+    @server.tool()
+    async def get_campaign_result(campaign_id: str) -> dict[str, Any]:
+        """Read structured campaign metrics and outcome summaries from the workspace."""
+        return await invoke(lambda: controller.campaign_result(campaign_id))
 
     @server.tool()
     async def cancel_campaign(campaign_id: str) -> dict[str, Any]:

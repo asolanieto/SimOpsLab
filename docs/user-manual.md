@@ -280,7 +280,7 @@ El allowlist por defecto solo permite `demo`. Para usar el ejemplo Nav2, el oper
 
 - El backend Nav2/TurtleBot3 solo implementa la ruta sandbox indicada; otros simuladores requieren un adapter específico.
 - No hay comando CLI para cancelar corridas; la cancelación está disponible en MCP y es cooperativa.
-- El CLI y MCP no tienen una tool para descargar artefactos ni consultar el historial completo de cada intento.
+- MCP entrega el resumen estructurado por escenario y configuración con `get_campaign_result`; no expone el contenido de artefactos ni el historial completo de cada intento.
 - No hay informe PDF, gráficos ni comparación estadística entre configuraciones.
 
 

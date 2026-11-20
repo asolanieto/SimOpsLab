@@ -32,6 +32,7 @@ La lista predeterminada solo incluye `demo`. Instalar un plugin de backend no ba
 | `start_campaign` | Registra la huella y ejecuta en segundo plano. |
 | `resume_campaign` | Reanuda intentos pendientes de una campaña del mismo workspace. |
 | `get_campaign_status` | Devuelve estado de campaña, corridas, intentos y último evento. |
+| `get_campaign_result` | Devuelve el análisis canónico con métricas por sistema, escenario y configuración. |
 | `cancel_campaign` | Solicita cancelación cooperativa del job activo. |
 | `render_report` | Genera JSON, Markdown y HTML desde resultados guardados. |
 | `validate_tuning` | Comprueba perfil, parámetros extremos, presupuesto, escenarios y criterios de un tuning antes de ejecutarlo. |
@@ -48,4 +49,4 @@ La lista predeterminada solo incluye `demo`. Instalar un plugin de backend no ba
 - Los plugins de backend son código Python de confianza. El operador solo debe instalar y permitir adapters revisados; el allowlist MCP no puede aislar un plugin malicioso.
 - Stdio confía en el host local que lanza el proceso. El server no está configurado para exposición HTTP remota.
 
-Las tools son asíncronas y el inicio de una campaña/afinador retorna un ID; el agente consulta después su estado. Para afinados de larga duración, el manifiesto determina presupuesto, réplicas y objetivos; el informe advierte que los finalistas necesitan confirmación hold-out.
+Las tools son asíncronas y el inicio de una campaña/afinador retorna un ID; el agente consulta después su estado. Al terminar, `get_campaign_result` expone las métricas estructuradas al agente y `render_report` genera JSON, Markdown y HTML locales. Para afinados de larga duración, el manifiesto determina presupuesto, réplicas y objetivos; el informe advierte que los finalistas necesitan confirmación hold-out.
