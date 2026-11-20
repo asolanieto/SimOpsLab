@@ -1,0 +1,45 @@
+# Esquema ilustrativo; todavía no es ejecutable.
+# Debe evolucionar hacia un JSON Schema versionado antes del MVP.
+schema_version: "0.1.0"
+campaign:
+  id: "example-navigation-robustness"
+  title: "Comparación de controladores"
+  backend:
+    adapter: "example.simulator"
+    version: "pinned-by-workspace"
+  system:
+    adapter: "example.controller"
+    version: "pinned-by-workspace"
+  matrix:
+    scenarios:
+      - id: "open-space"
+      - id: "moving-obstacle"
+    configurations:
+      - id: "baseline"
+        values: {}
+      - id: "candidate-a"
+        values: {}
+    repetitions: 5
+    seeds: [11, 22, 33, 44, 55]
+  execution:
+    max_parallel: 1
+    infrastructure_retries: 1
+    wall_time_budget_s: 3600
+    real_hardware: false
+  outcomes:
+    success:
+      definition: "declared by the task profile"
+  metrics:
+    - id: "task.success"
+      version: "1"
+      unit: "boolean"
+    - id: "task.duration"
+      version: "1"
+      unit: "s"
+    - id: "safety.collision_count"
+      version: "1"
+      unit: "count"
+  analysis:
+    primary_metrics: ["task.success", "safety.collision_count"]
+    confidence_level: 0.95
+    holdout_scenarios: ["moving-obstacle"]

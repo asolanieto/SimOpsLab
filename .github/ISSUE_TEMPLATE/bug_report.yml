@@ -1,0 +1,29 @@
+name: Bug report
+description: Report a reproducible SimOps or adapter issue.
+body:
+  - type: input
+    id: version
+    attributes:
+      label: SimOps version
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: backend
+    attributes:
+      label: Backend and simulator version
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps and expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant sanitized error
+      description: Do not include secrets, robot identifiers, maps, or private artifacts.
+    validations:
+      required: false

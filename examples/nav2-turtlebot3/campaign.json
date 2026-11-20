@@ -1,0 +1,45 @@
+{
+  "schema_version": "0.1.0",
+  "backend": "nav2-docker",
+  "campaign": {
+    "campaign_id": "nav2-tb3-smoke",
+    "title": "Nav2 TurtleBot3 headless smoke run",
+    "systems": ["nav2-default"],
+    "scenarios": [
+      {
+        "scenario_id": "tb3-sandbox-eastbound",
+        "parameters": {
+          "start_x": -2.0,
+          "start_y": -0.5,
+          "start_yaw": 0.0,
+          "goal_x": 0.0,
+          "goal_y": -0.5,
+          "goal_yaw": 0.0,
+          "timeout_s": 90
+        }
+      }
+    ],
+    "configurations": [
+      {
+        "configuration_id": "nav2-default-mppi",
+        "values": {
+          "controller.vx_max": 0.5,
+          "controller.wz_max": 1.9,
+          "controller.temperature": 0.3,
+          "costmap.inflation_radius_m": 0.7
+        }
+      }
+    ],
+    "repetitions": 1,
+    "seeds": [],
+    "max_parallel": 1,
+    "max_infrastructure_retries": 0,
+    "wall_time_budget_s": 180,
+    "metadata": {
+      "robot": "TurtleBot3 Waffle",
+      "simulator": "Gazebo Sim",
+      "world": "Nav2 TB3 sandbox",
+      "note": "The bundled scene is deterministic; run.seed is not applied by this backend."
+    }
+  }
+}

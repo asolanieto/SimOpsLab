@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If SimOps Lab supports your work, cite the software repository."
+title: "SimOps Lab"
+type: software
+abstract: "A reproducible campaign runner and parameter-tuning framework for simulator-backed systems, with a local MCP interface."
+repository-code: "https://github.com/asolanieto/SimOpsLab"
+license: Apache-2.0
+version: 0.1.0
+authors:
+  - family-names: "SimOps Lab contributors"

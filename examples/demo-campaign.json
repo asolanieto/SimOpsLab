@@ -1,0 +1,46 @@
+{
+  "schema_version": "0.1.0",
+  "backend": "demo",
+  "campaign": {
+    "campaign_id": "demo-navigation-smoke",
+    "title": "Synthetic navigation smoke campaign",
+    "systems": ["demo-robot"],
+    "scenarios": [
+      {
+        "scenario_id": "open-space",
+        "parameters": {"difficulty": 0.1, "distance_m": 6.0}
+      },
+      {
+        "scenario_id": "obstacle-course",
+        "parameters": {"difficulty": 0.55, "distance_m": 8.0}
+      }
+    ],
+    "configurations": [
+      {
+        "configuration_id": "baseline",
+        "values": {
+          "max_speed_mps": 0.45,
+          "controller_gain": 1.0,
+          "inflation_radius_m": 0.45
+        }
+      },
+      {
+        "configuration_id": "cautious",
+        "values": {
+          "max_speed_mps": 0.35,
+          "controller_gain": 1.15,
+          "inflation_radius_m": 0.55
+        }
+      }
+    ],
+    "repetitions": 2,
+    "seeds": [13, 37],
+    "max_parallel": 2,
+    "max_infrastructure_retries": 1,
+    "wall_time_budget_s": 30.0,
+    "metadata": {
+      "purpose": "CLI and persistence demonstration",
+      "not_a_physics_simulation": true
+    }
+  }
+}

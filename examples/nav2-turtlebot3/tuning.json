@@ -1,0 +1,128 @@
+{
+  "schema_version": "0.1.0",
+  "backend": "nav2-docker",
+  "robot_profile": "../robot-profiles/turtlebot3-demo.json",
+  "tuning": {
+    "tuning_id": "nav2-tb3-profile-tuning",
+    "title": "TurtleBot3 demo constrained tuning",
+    "strategy": "lhs",
+    "budget": 3,
+    "seed": 1701,
+    "base_configuration": {
+      "controller.vx_max": 0.18,
+      "controller.wz_max": 1.4,
+      "controller.temperature": 0.3,
+      "costmap.inflation_radius_m": 0.7
+    },
+    "parameters": [
+      {
+        "name": "controller.vx_max",
+        "kind": "float",
+        "lower": 0.12,
+        "upper": 0.22
+      },
+      {
+        "name": "controller.wz_max",
+        "kind": "float",
+        "lower": 0.9,
+        "upper": 1.8
+      },
+      {
+        "name": "controller.temperature",
+        "kind": "float",
+        "lower": 0.2,
+        "upper": 0.6
+      },
+      {
+        "name": "costmap.inflation_radius_m",
+        "kind": "float",
+        "lower": 0.55,
+        "upper": 0.85
+      }
+    ],
+    "objectives": [
+      {
+        "metric_id": "task.duration_s",
+        "direction": "minimize",
+        "aggregation": "mean"
+      },
+      {
+        "metric_id": "navigation.path_length_m",
+        "direction": "minimize",
+        "aggregation": "mean"
+      },
+      {
+        "metric_id": "control.rms_angular_acceleration_radps2",
+        "direction": "minimize",
+        "aggregation": "mean"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_id": "all_routes_succeed",
+        "description": "Every run in the screening set must reach its goal",
+        "metric_id": "task.success",
+        "operator": ">=",
+        "threshold": 1,
+        "aggregation": "worst_case"
+      },
+      {
+        "constraint_id": "linear_speed_within_profile",
+        "description": "Observed peak linear command stays within the profile envelope",
+        "metric_id": "control.peak_linear_speed_mps",
+        "operator": "<=",
+        "threshold": 0.22,
+        "aggregation": "worst_case"
+      },
+      {
+        "constraint_id": "angular_speed_within_profile",
+        "description": "Observed peak angular command stays within the profile envelope",
+        "metric_id": "control.peak_angular_speed_radps",
+        "operator": "<=",
+        "threshold": 1.8,
+        "aggregation": "worst_case"
+      }
+    ],
+    "campaign": {
+      "systems": [
+        "nav2-tb3"
+      ],
+      "scenarios": [
+        {
+          "scenario_id": "eastbound",
+          "parameters": {
+            "start_x": -2.0,
+            "start_y": -0.5,
+            "start_yaw": 0,
+            "goal_x": 0,
+            "goal_y": -0.5,
+            "goal_yaw": 0,
+            "timeout_s": 90
+          }
+        },
+        {
+          "scenario_id": "westbound",
+          "parameters": {
+            "start_x": 0,
+            "start_y": -0.5,
+            "start_yaw": 3.14159,
+            "goal_x": -2.0,
+            "goal_y": -0.5,
+            "goal_yaw": 3.14159,
+            "timeout_s": 90
+          }
+        }
+      ],
+      "repetitions": 1,
+      "seeds": [
+        11
+      ],
+      "max_parallel": 1,
+      "max_infrastructure_retries": 0,
+      "wall_time_budget_s": 1800,
+      "metadata": {
+        "note": "The bundled deterministic sandbox does not apply random seeds. The profile envelope checks observed commands but does not replace contact, clearance, or hold-out validation."
+      }
+    }
+  }
+}

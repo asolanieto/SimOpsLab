@@ -1,0 +1,39 @@
+{
+  "schema_version": "0.1.0",
+  "profile_id": "turtlebot3-demo-envelope",
+  "name": "TurtleBot3 demo envelope (editable example, not a manufacturer rating)",
+  "geometry": {
+    "footprint_radius_m": 0.105
+  },
+  "motion_limits": {
+    "max_linear_speed_mps": 0.22,
+    "max_angular_speed_radps": 1.8
+  },
+  "sensors": [
+    {
+      "name": "laser",
+      "topic": "/scan",
+      "message_type": "sensor_msgs/msg/LaserScan",
+      "expected_hz": 5,
+      "required": true
+    },
+    {
+      "name": "odometry",
+      "topic": "/odom",
+      "message_type": "nav_msgs/msg/Odometry",
+      "expected_hz": 30,
+      "required": true
+    },
+    {
+      "name": "velocity_command",
+      "topic": "/cmd_vel",
+      "message_type": "geometry_msgs/msg/TwistStamped",
+      "expected_hz": 20,
+      "required": true
+    }
+  ],
+  "reference_topics": {
+    "clock": "/clock",
+    "diagnostics": "/diagnostics"
+  }
+}

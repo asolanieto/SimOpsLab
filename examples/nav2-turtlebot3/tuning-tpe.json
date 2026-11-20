@@ -1,0 +1,63 @@
+{
+  "schema_version": "0.1.0",
+  "backend": "nav2-docker",
+  "tuning": {
+    "tuning_id": "nav2-tb3-mppi-tpe",
+    "title": "Tune Nav2 MPPI with persistent TPE",
+    "strategy": "tpe",
+    "budget": 4,
+    "seed": 2027,
+    "n_startup_trials": 2,
+    "base_configuration": {
+      "controller.vx_max": 0.5,
+      "controller.wz_max": 1.9,
+      "controller.temperature": 0.3,
+      "costmap.inflation_radius_m": 0.7
+    },
+    "parameters": [
+      {"name": "controller.vx_max", "kind": "float", "lower": 0.3, "upper": 0.65},
+      {"name": "controller.wz_max", "kind": "float", "lower": 1.0, "upper": 2.4},
+      {"name": "controller.temperature", "kind": "float", "lower": 0.15, "upper": 0.8},
+      {"name": "costmap.inflation_radius_m", "kind": "float", "lower": 0.4, "upper": 0.9}
+    ],
+    "objectives": [
+      {"metric_id": "task.duration_s", "direction": "minimize"},
+      {"metric_id": "navigation.path_length_m", "direction": "minimize"}
+    ],
+    "constraints": [
+      {
+        "constraint_id": "reach-goal",
+        "description": "the robot must reach the goal",
+        "metric_id": "task.success",
+        "operator": ">=",
+        "threshold": 1.0
+      }
+    ],
+    "campaign": {
+      "systems": ["nav2-mppi"],
+      "scenarios": [
+        {
+          "scenario_id": "tb3-sandbox-eastbound",
+          "parameters": {
+            "start_x": -2.0,
+            "start_y": -0.5,
+            "start_yaw": 0.0,
+            "goal_x": 0.0,
+            "goal_y": -0.5,
+            "goal_yaw": 0.0,
+            "timeout_s": 90
+          }
+        }
+      ],
+      "repetitions": 1,
+      "seeds": [],
+      "max_parallel": 1,
+      "max_infrastructure_retries": 1,
+      "wall_time_budget_s": 900,
+      "metadata": {
+        "purpose": "small TPE integration tutorial",
+        "interpretation": "only one deterministic sandbox route; not evidence of general Nav2 quality"
+      }
+    }
+  }
+}

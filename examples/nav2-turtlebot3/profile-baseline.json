@@ -1,0 +1,22 @@
+{
+  "schema_version": "0.1.0",
+  "backend": "nav2-docker",
+  "campaign": {
+    "campaign_id": "nav2-tb3-profile-baseline",
+    "title": "TurtleBot3 profile baseline for paired comparison",
+    "systems": ["nav2-tb3"],
+    "scenarios": [
+      {"scenario_id": "eastbound", "parameters": {"start_x": -2.0, "start_y": -0.5, "start_yaw": 0, "goal_x": 0, "goal_y": -0.5, "goal_yaw": 0, "timeout_s": 90}},
+      {"scenario_id": "westbound", "parameters": {"start_x": 0, "start_y": -0.5, "start_yaw": 3.14159, "goal_x": -2.0, "goal_y": -0.5, "goal_yaw": 3.14159, "timeout_s": 90}}
+    ],
+    "configurations": [
+      {"configuration_id": "profile-base", "values": {"controller.vx_max": 0.18, "controller.wz_max": 1.4, "controller.temperature": 0.3, "costmap.inflation_radius_m": 0.7}}
+    ],
+    "repetitions": 1,
+    "seeds": [11],
+    "max_parallel": 1,
+    "max_infrastructure_retries": 0,
+    "wall_time_budget_s": 900,
+    "metadata": {"robot_profile": "turtlebot3-demo-envelope", "note": "The deterministic bundled scene does not apply run.seed. Paired against the same two routes as the profile tuning screen; this is screening evidence only."}
+  }
+}

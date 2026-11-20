@@ -1,0 +1,56 @@
+{
+  "schema_version": "0.1.0",
+  "backend": "demo",
+  "tuning": {
+    "tuning_id": "demo-navigation-tuning",
+    "title": "Tune a synthetic navigation controller",
+    "strategy": "lhs",
+    "budget": 12,
+    "seed": 2026,
+    "base_configuration": {
+      "max_speed_mps": 0.45,
+      "controller_gain": 1.0,
+      "inflation_radius_m": 0.45
+    },
+    "parameters": [
+      {"name": "max_speed_mps", "kind": "float", "lower": 0.25, "upper": 0.8},
+      {"name": "controller_gain", "kind": "float", "lower": 0.5, "upper": 1.8},
+      {"name": "inflation_radius_m", "kind": "float", "lower": 0.2, "upper": 0.75}
+    ],
+    "objectives": [
+      {"metric_id": "task.duration_s", "direction": "minimize"},
+      {"metric_id": "task.success", "direction": "maximize"}
+    ],
+    "constraints": [
+      {
+        "constraint_id": "no_collisions",
+        "description": "collision count must be zero in every run",
+        "metric_id": "safety.collision_count",
+        "operator": "<=",
+        "threshold": 0,
+        "aggregation": "worst_case"
+      },
+      {
+        "constraint_id": "minimum_success_rate",
+        "description": "mean success rate across screening runs must be at least 60 percent",
+        "metric_id": "task.success",
+        "operator": ">=",
+        "threshold": 0.6,
+        "aggregation": "mean"
+      }
+    ],
+    "campaign": {
+      "systems": ["demo-robot"],
+      "scenarios": [
+        {"scenario_id": "open-space", "parameters": {"difficulty": 0.1, "distance_m": 6.0}},
+        {"scenario_id": "obstacle-course", "parameters": {"difficulty": 0.45, "distance_m": 8.0}}
+      ],
+      "repetitions": 4,
+      "seeds": [101, 202, 303, 404],
+      "max_parallel": 2,
+      "max_infrastructure_retries": 1,
+      "wall_time_budget_s": 120,
+      "metadata": {"purpose": "synthetic parameter search tutorial"}
+    }
+  }
+}

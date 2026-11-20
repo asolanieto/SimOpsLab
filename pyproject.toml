@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simops-lab"
+version = "0.1.0"
+description = "Portable, reproducible experiment campaigns for simulation and system evaluation"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "SimOps Lab contributors" }]
+dependencies = []
+
+[project.scripts]
+simops = "simops.cli:main"
+
+[project.entry-points."simops.backends"]
+nav2-docker = "simops.nav2_docker:Nav2DockerBackend"
+
+[project.optional-dependencies]
+mcp = ["mcp>=2.0,<3.0"]
+optimize = ["optuna>=5.0,<6.0"]
+report = ["jinja2>=3.1", "plotly>=5.0"]
+stats = ["numpy>=1.26", "scipy>=1.11"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100

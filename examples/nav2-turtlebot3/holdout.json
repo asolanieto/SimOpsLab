@@ -1,0 +1,22 @@
+{
+  "schema_version": "0.1.0",
+  "backend": "nav2-docker",
+  "campaign": {
+    "campaign_id": "nav2-tb3-profile-holdout",
+    "title": "TurtleBot3 holdout route confirmation",
+    "systems": ["nav2-tb3"],
+    "scenarios": [
+      {"scenario_id": "holdout-y-plus-half", "parameters": {"start_x": -2.0, "start_y": 0.5, "start_yaw": 0, "goal_x": 0, "goal_y": 0.5, "goal_yaw": 0, "timeout_s": 90}}
+    ],
+    "configurations": [
+      {"configuration_id": "profile-baseline", "values": {"controller.vx_max": 0.18, "controller.wz_max": 1.4, "controller.temperature": 0.3, "costmap.inflation_radius_m": 0.7}},
+      {"configuration_id": "lhs-0002-screening-candidate", "values": {"controller.vx_max": 0.20641944679259555, "controller.wz_max": 1.5486093520240223, "controller.temperature": 0.22383543060318836, "costmap.inflation_radius_m": 0.6069645836002536}}
+    ],
+    "repetitions": 3,
+    "seeds": [111, 222, 333],
+    "max_parallel": 1,
+    "max_infrastructure_retries": 0,
+    "wall_time_budget_s": 900,
+    "metadata": {"holdout": true, "robot_profile": "turtlebot3-demo-envelope", "note": "Route excluded from LHS screening. This simulator does not apply run.seed; repeats measure execution variation, not independent random seeds."}
+  }
+}
