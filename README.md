@@ -32,6 +32,12 @@ The schema does not force every system into one score. Define the mission measur
 
 The [metric catalogue](docs/metrics-catalog.md) distinguishes measures emitted by the Nav2 example from extensions that need additional instrumentation. In the demo, minimum laser range is **not** presented as safe clearance, odometry is **not** treated as independent ground truth, and missing contact data is **not** counted as zero collisions.
 
+## Example result
+
+![Baseline vs TPE-tuned Nav2 MPPI on TurtleBot3](docs/images/nav2-tuning-case.svg)
+
+The figure comes from one real run of the Nav2/TurtleBot3 example: a baseline, four TPE candidates, and a hold-out route kept out of the search. It shows the loop working end to end; with this sample size it is not evidence of a general improvement.
+
 ## Robot-aware tuning
 
 1. Declare geometry, kinematic limits, and available sensors in a [robot profile](examples/robot-profiles/turtlebot3-demo.json).
@@ -62,6 +68,50 @@ simops run examples/nav2-turtlebot3/campaign.json
 ```
 
 Read the [user manual](docs/user-manual.md) before configuring an experiment. To use MCP locally, install `python -m pip install -e ".[mcp]"` and run `simops mcp --workspace ./workspace`; the server has no shell tool and only allows the synthetic backend by default. Install TPE with `python -m pip install -e ".[optimize]"`.
+
+## Use it from an AI agent (MCP)
+
+SimOps Lab runs as a local MCP server over stdio. No clone or manual install is needed with [`uv`](https://docs.astral.sh/uv/). First create a workspace with a demo manifest the agent can use:
+
+```sh
+mkdir -p ~/simops-workspace/manifests
+curl -fsSL https://raw.githubusercontent.com/asolanieto/SimOpsLab/main/examples/demo-campaign.json -o ~/simops-workspace/manifests/demo-campaign.json
+curl -fsSL https://raw.githubusercontent.com/asolanieto/SimOpsLab/main/examples/demo-tuning.json -o ~/simops-workspace/manifests/demo-tuning.json
+```
+
+Then register the server in your host.
+
+**Claude Code**
+
+```sh
+claude mcp add simops -- uvx --from "simops-lab[mcp,optimize] @ git+https://github.com/asolanieto/SimOpsLab" simops mcp --workspace ~/simops-workspace
+```
+
+**Claude Desktop, Cursor, and other hosts** that read an `mcpServers` JSON file:
+
+```json
+{
+  "mcpServers": {
+    "simops": {
+      "command": "uvx",
+      "args": [
+        "--from", "simops-lab[mcp,optimize] @ git+https://github.com/asolanieto/SimOpsLab",
+        "simops", "mcp", "--workspace", "/home/you/simops-workspace"
+      ]
+    }
+  }
+}
+```
+
+**Codex** (`~/.codex/config.toml`)
+
+```toml
+[mcp_servers.simops]
+command = "uvx"
+args = ["--from", "simops-lab[mcp,optimize] @ git+https://github.com/asolanieto/SimOpsLab", "simops", "mcp", "--workspace", "/home/you/simops-workspace"]
+```
+
+Then ask the agent, for example: *"List the SimOps manifests, validate `demo-tuning.json`, run the tuning, and summarize the Pareto candidates."* Only the synthetic `demo` backend is enabled by default; add `--allow-backend nav2-docker` after building the Docker image to let the agent run Nav2. See [the MCP guide](docs/mcp.md) for tools and limits.
 
 ## Add support for your stack
 

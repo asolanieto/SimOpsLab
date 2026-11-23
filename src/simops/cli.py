@@ -6,9 +6,9 @@ import argparse
 import json
 import signal
 import sys
+from collections.abc import Sequence
 from pathlib import Path
 from threading import Event
-from typing import Sequence
 
 from .analysis import analyze_campaign
 from .backends import available_backends, load_backend
@@ -20,7 +20,6 @@ from .runner import CampaignRunner
 from .serialization import pretty_json, to_json_value
 from .store import SQLiteCampaignStore
 from .tuning import load_tuning_manifest, run_tuning
-
 
 DEFAULT_STORE = Path(".simops/campaigns.sqlite3")
 

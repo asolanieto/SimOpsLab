@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-import math
 import json
+import math
 import time
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from threading import Event
-from typing import Sequence
 
 from .backends import ExecutionContext, ExperimentBackend
 from .contracts import (
@@ -23,7 +23,7 @@ from .contracts import (
 )
 from .paths import path_component
 from .planner import run_id_for
-from .serialization import canonical_json, campaign_spec_from_dict
+from .serialization import campaign_spec_from_dict, canonical_json
 from .store import FilesystemArtifactStore, SQLiteCampaignStore, utc_now
 
 

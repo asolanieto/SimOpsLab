@@ -7,9 +7,9 @@ import math
 import shutil
 import subprocess
 import time
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Sequence
 
 from .backends import ExecutionContext
 from .contracts import (
@@ -20,7 +20,6 @@ from .contracts import (
     RunStatus,
     SystemOutcome,
 )
-
 
 BASE_IMAGE = (
     "ghcr.io/ros-navigation/nav2_docker:lyrical-1.5.3-standard"

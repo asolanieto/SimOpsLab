@@ -15,7 +15,7 @@ from .paths import path_component
 from .planner import CampaignMatrix, ConfigurationDefinition, ScenarioDefinition, plan_campaign
 from .reports import write_report
 from .runner import CampaignRunner
-from .serialization import pretty_json, to_json_value
+from .serialization import to_json_value
 from .store import SQLiteCampaignStore
 from .tuning import load_tuning_manifest, run_tuning
 

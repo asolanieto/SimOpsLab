@@ -9,7 +9,7 @@ from pathlib import Path
 
 from simops.analysis import analyze_campaign, wilson_interval
 from simops.backends import ExecutionContext
-from simops.contracts import RunResult, RunSpec, RunStatus, SystemOutcome
+from simops.contracts import RunResult, RunSpec, RunStatus
 from simops.demo import DemoNavigationBackend
 from simops.manifest import load_campaign_manifest
 from simops.paths import path_component

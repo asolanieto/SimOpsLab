@@ -5,6 +5,6 @@ type: software
 abstract: "A reproducible campaign runner and parameter-tuning framework for simulator-backed systems, with a local MCP interface."
 repository-code: "https://github.com/asolanieto/SimOpsLab"
 license: Apache-2.0
-version: 0.1.0
+version: 0.1.1
 authors:
-  - family-names: "SimOps Lab contributors"
+  - name: "asolanieto"

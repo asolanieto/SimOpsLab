@@ -2,6 +2,8 @@
 
 The MCP server is a thin adapter over the same operations as the CLI. It uses the official Python SDK over `stdio`; it does not open a network port.
 
+Quick setup for Claude Code, Claude Desktop, Cursor and Codex without cloning is in the [README](../README.md#use-it-from-an-ai-agent-mcp).
+
 ## Install and start
 
 ```sh

@@ -6,12 +6,12 @@ EasyNav, a particular simulator, or an LLM transport.
 
 from __future__ import annotations
 
+import math
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-import math
-from typing import Mapping, TypeAlias
-
+from typing import TypeAlias
 
 JSONScalar: TypeAlias = str | int | float | bool | None
 JSONValue: TypeAlias = JSONScalar | list["JSONValue"] | dict[str, "JSONValue"]

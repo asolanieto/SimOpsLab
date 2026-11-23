@@ -87,17 +87,16 @@ def _merge_nav2_params(overrides_path: str, output_path: Path) -> None:
 def _navigate(args: argparse.Namespace, launch: subprocess.Popen[bytes], log: Path) -> dict[str, object]:
     import rclpy
     from action_msgs.msg import GoalStatus
-    from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
+    from geometry_msgs.msg import PoseStamped, PoseWithCovarianceStamped, TwistStamped
+    from lifecycle_msgs.srv import GetState
     from nav2_msgs.action import NavigateToPose
     from nav_msgs.msg import Odometry
     from rclpy.action import ActionClient
     from rclpy.node import Node
     from rclpy.parameter import Parameter
     from rclpy.qos import QoSDurabilityPolicy, QoSProfile, qos_profile_sensor_data
-    from sensor_msgs.msg import LaserScan
-    from geometry_msgs.msg import TwistStamped
     from rosgraph_msgs.msg import Clock
-    from lifecycle_msgs.srv import GetState
+    from sensor_msgs.msg import LaserScan
 
     rclpy.init(args=None)
     node = Node(

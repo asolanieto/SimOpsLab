@@ -22,8 +22,8 @@ from .contracts import (
     SystemOutcome,
 )
 from .serialization import (
-    canonical_json,
     campaign_spec_from_dict,
+    canonical_json,
     run_result_from_dict,
     to_json_value,
 )

@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from importlib.metadata import entry_points
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from importlib.metadata import entry_points
 from pathlib import Path
 from threading import Event
-from typing import Callable, Protocol, Sequence
+from typing import Protocol
 
 from .contracts import RunResult, RunSpec
 from .store import FilesystemArtifactStore

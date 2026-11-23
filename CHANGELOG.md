@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+- README: setup for Claude Code, Claude Desktop/Cursor and Codex with `uvx`, and an example result figure.
+- Author metadata, project URLs and keywords.
+- Ruff lint step in CI (import order, unused imports, pyupgrade, bugbear); no behavior changes.
+
 ## 0.1.0
 
 Initial public product baseline:

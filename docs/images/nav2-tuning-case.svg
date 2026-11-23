@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" font-family="Helvetica,Arial,sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="30" y="38" font-size="22" font-weight="700" fill="#14213d">Nav2 / TurtleBot3: baseline vs. TPE-tuned MPPI</text>
+<text x="30" y="60" font-size="13" fill="#555">Mean time to goal (s, wall clock), lower is better. All runs reached the goal. 4 TPE candidates; 2 routes x 2 repetitions each.</text>
+<line x1="70" y1="370.0" x2="480" y2="370.0" stroke="#e3e3e3"/><text x="62" y="374.0" font-size="11" text-anchor="end" fill="#777">0</text>
+<line x1="70" y1="297.77777777777777" x2="480" y2="297.77777777777777" stroke="#e3e3e3"/><text x="62" y="301.77777777777777" font-size="11" text-anchor="end" fill="#777">5</text>
+<line x1="70" y1="225.55555555555554" x2="480" y2="225.55555555555554" stroke="#e3e3e3"/><text x="62" y="229.55555555555554" font-size="11" text-anchor="end" fill="#777">10</text>
+<line x1="70" y1="153.33333333333334" x2="480" y2="153.33333333333334" stroke="#e3e3e3"/><text x="62" y="157.33333333333334" font-size="11" text-anchor="end" fill="#777">15</text>
+<text x="270" y="92" font-size="13" font-weight="600" text-anchor="middle" fill="#14213d">Tuning set</text>
+<rect x="95" y="181.93333333333334" width="62" height="188.06666666666666" fill="#9aa5b1"/>
+<text x="126" y="175.93333333333334" font-size="12" text-anchor="middle" fill="#222">13.0</text>
+<text x="126" y="386" font-size="11" text-anchor="middle" fill="#444">TPE 0</text>
+<rect x="195" y="128.20000000000002" width="62" height="241.79999999999998" fill="#9aa5b1"/>
+<text x="226" y="122.20000000000002" font-size="12" text-anchor="middle" fill="#222">16.7</text>
+<text x="226" y="386" font-size="11" text-anchor="middle" fill="#444">TPE 1</text>
+<rect x="295" y="190.0222222222222" width="62" height="179.9777777777778" fill="#9aa5b1"/>
+<text x="326" y="184.0222222222222" font-size="12" text-anchor="middle" fill="#222">12.5</text>
+<text x="326" y="386" font-size="11" text-anchor="middle" fill="#444">TPE 2</text>
+<rect x="395" y="236.67777777777778" width="62" height="133.32222222222222" fill="#2a9d8f"/>
+<text x="426" y="250.67777777777778" font-size="12" text-anchor="middle" fill="#fff">9.2</text>
+<text x="426" y="386" font-size="11" text-anchor="middle" fill="#444">TPE 3</text>
+<text x="426" y="399" font-size="11" text-anchor="middle" fill="#444">(selected)</text>
+<line x1="70" y1="226.46555555555557" x2="480" y2="226.46555555555557" stroke="#d62828" stroke-dasharray="5 4" stroke-width="2"/><text x="486" y="230.46555555555557" font-size="11" text-anchor="start" fill="#d62828">baseline 9.9 s</text>
+<line x1="70" y1="370" x2="480" y2="370" stroke="#333"/>
+<text x="710" y="92" font-size="13" font-weight="600" text-anchor="middle" fill="#14213d">Hold-out route (3 reps each)</text>
+<rect x="620" y="229.10888888888888" width="70" height="140.89111111111112" fill="#9aa5b1"/><text x="655" y="223.10888888888888" font-size="12" text-anchor="middle" fill="#222">9.75</text><text x="655" y="386" font-size="11" text-anchor="middle" fill="#444">baseline</text>
+<rect x="730" y="240.4188888888889" width="70" height="129.5811111111111" fill="#2a9d8f"/><text x="765" y="234.4188888888889" font-size="12" text-anchor="middle" fill="#222">8.97</text><text x="765" y="386" font-size="11" text-anchor="middle" fill="#444">TPE-selected</text>
+<line x1="580" y1="370" x2="860" y2="370" stroke="#333"/><text x="720" y="195.10888888888888" font-size="13" font-weight="700" text-anchor="middle" fill="#2a9d8f">-8.0 %</text>
+<text x="30" y="430" font-size="12" fill="#555">Small sample, one sandbox map, no physical seeds, wall-clock time: evidence that the loop works end to end, not a general improvement or a safety claim.</text>
+<text x="30" y="450" font-size="12" fill="#555">Generated with SimOps Lab (LHS/TPE tuning + hold-out confirmation).</text></svg>

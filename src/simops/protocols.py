@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Protocol
 
-from .backends import ExperimentBackend
 from .contracts import ArtifactRef, CampaignSpec, MetricValue, RunResult, RunSpec
 from .optimization import OptimizationResult, TuningEvaluator, TuningSpec
 

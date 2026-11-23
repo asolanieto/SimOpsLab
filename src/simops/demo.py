@@ -9,8 +9,8 @@ from __future__ import annotations
 import hashlib
 import math
 import random
+from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Sequence
 
 from .backends import ExecutionContext
 from .contracts import (

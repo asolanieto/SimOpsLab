@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import math
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from statistics import fmean, median
-from typing import Any, Iterable
+from typing import Any
 
 from .contracts import (
     CampaignSpec,
